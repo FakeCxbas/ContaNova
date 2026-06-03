@@ -46,7 +46,7 @@ const Demo = () => {
 
           <div className="text-center">
             <Button size="lg" className="text-base px-8 h-12 gap-2" asChild>
-              <Link to="/register">Comenzar gratis <ArrowRight size={18} /></Link>
+              <Link to="/login">Solicitar acceso <ArrowRight size={18} /></Link>
             </Button>
           </div>
         </div>

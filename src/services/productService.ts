@@ -1,15 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-export type ProductInput = {
-  name: string;
-  price: number;
-  iva: number;
-  type: string;
-  stock: number;
-  min_stock: number;
-};
+export type Product = Tables<"products">;
+export type ProductInput = Omit<TablesInsert<"products">, "company_id" | "id" | "created_at" | "active">;
 
-export type ProductUpdate = { id: string; stock?: number; active?: boolean; [key: string]: any };
+export type ProductUpdate = TablesUpdate<"products"> & { id: string };
 
 export const productService = {
   async getAll() {

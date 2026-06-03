@@ -1,12 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
-export type PaymentInput = {
-  invoice_id: string;
-  date: string;
-  method: string;
-  amount: number;
-  note: string;
-};
+export type Payment = Tables<"payments">;
+export type PaymentInput = Omit<TablesInsert<"payments">, "company_id" | "id" | "created_at">;
 
 export const paymentService = {
   async getAll(invoiceId?: string) {
@@ -25,5 +21,25 @@ export const paymentService = {
       .single();
     if (error) throw error;
     return data;
+  },
+
+  async uploadEvidence(companyId: string, file: File) {
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "bin";
+    const safeBaseName = file.name
+      .replace(/\.[^.]+$/, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "comprobante";
+    const path = `${companyId}/payments/${Date.now()}-${safeBaseName}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("company-logos")
+      .upload(path, file, { upsert: false });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from("company-logos").getPublicUrl(path);
+    return data.publicUrl;
   },
 };

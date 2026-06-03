@@ -1,18 +1,18 @@
 const steps = [
   {
     number: "01",
-    title: "Crea tu cuenta",
-    description: "Regístrate en menos de 2 minutos con tus datos básicos y RUC.",
+    title: "Crea el acceso",
+    description: "El administrador genera el usuario desde el panel interno y asigna el rol adecuado.",
   },
   {
     number: "02",
-    title: "Configura tu empresa",
-    description: "Sube tu firma electrónica y personaliza tus comprobantes con tu logo.",
+    title: "Entrega credenciales",
+    description: "Se copia la clave temporal y se comparte con el cliente o colaborador por el canal que prefieras.",
   },
   {
     number: "03",
-    title: "Emite y gestiona",
-    description: "Comienza a emitir facturas electrónicas y controla tus finanzas al instante.",
+    title: "Ingresa y opera",
+    description: "El usuario entra desde iniciar sesion y comienza a trabajar dentro de su entorno autorizado.",
   },
 ];
 
@@ -25,7 +25,7 @@ const HowItWorksSection = () => {
             Comienza en 3 simples pasos
           </h2>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Sin instalaciones, sin complicaciones. Empieza a facturar hoy mismo.
+            Un flujo mas controlado para asignar accesos sin depender de registro publico.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">

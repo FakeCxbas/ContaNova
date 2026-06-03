@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoiceService, InvoiceInput } from "./invoiceService";
 import { useCompanyId } from "./companies";
 import { activityService } from "./activityService";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export function useInvoices() {
   return useQuery({
@@ -52,7 +53,7 @@ export function useUpdateInvoice() {
   const qc = useQueryClient();
   const { data: companyId } = useCompanyId();
   return useMutation({
-    mutationFn: ({ id, ...updates }: { id: string; status?: string }) =>
+    mutationFn: ({ id, ...updates }: { id: string } & TablesUpdate<"invoices">) =>
       invoiceService.update(id, updates),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["invoices"] });
@@ -63,9 +64,10 @@ export function useUpdateInvoice() {
           action: "editar_factura",
           entityType: "factura",
           entityId: variables.id,
-          description: `Actualizó factura${variables.status ? ` — estado: ${variables.status}` : ""}`,
+          description: `Actualizo factura${variables.status ? ` - estado: ${variables.status}` : ""}${variables.delivery_status ? ` - entrega: ${variables.delivery_status}` : ""}`,
         });
       }
     },
   });
 }
+

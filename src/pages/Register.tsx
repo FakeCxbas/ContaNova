@@ -1,107 +1,77 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { LockKeyhole, ShieldCheck, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { FieldError } from "@/components/ui/field-error";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { registerSchema, validateForm, type FieldErrors } from "@/lib/validations";
+import { Card, CardContent } from "@/components/ui/card";
+import { BrandLogo } from "@/components/branding/BrandMark";
 
 const Register = () => {
-  const [form, setForm] = useState({ name: "", email: "", password: "", ruc: "" });
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const update = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-    setErrors((prev) => ({ ...prev, [field]: "" }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-
-    const validation = validateForm(registerSchema, form);
-    if (!validation.success) {
-      setErrors(validation.errors);
-      return;
-    }
-    const validData = validation.data;
-
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: validData.email,
-      password: validData.password,
-      options: {
-        data: { full_name: validData.name },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-
-    if (error) {
-      const msg = error.message === "User already registered"
-        ? "Este correo ya está registrado. Intenta iniciar sesión."
-        : error.message;
-      toast({ title: "Error al crear cuenta", description: msg, variant: "destructive" });
-      return;
-    }
-
-    toast({
-      title: "Cuenta creada",
-      description: "Revisa tu correo electrónico para confirmar tu cuenta.",
-    });
-    navigate("/login");
-  };
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link to="/" className="text-2xl font-bold tracking-tight text-foreground">
-            Conta<span className="text-primary">Nova</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-foreground mt-6 mb-2">Crear cuenta</h1>
-          <p className="text-muted-foreground text-sm">
-            Comienza a facturar electrónicamente en minutos
-          </p>
-        </div>
+      <div className="w-full max-w-3xl">
+        <Card className="overflow-hidden border-border shadow-card">
+          <CardContent className="grid gap-0 p-0 md:grid-cols-[1.2fr_0.8fr]">
+            <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-600 px-8 py-10 text-white">
+              <Link to="/" className="inline-flex">
+                <BrandLogo
+                  className="[&_*]:text-white"
+                  caption="Acceso administrado internamente"
+                />
+              </Link>
+              <h1 className="mt-8 text-3xl font-bold leading-tight">
+                El acceso ya no se crea desde esta pantalla
+              </h1>
+              <p className="mt-4 max-w-xl text-sm leading-7 text-blue-50">
+                Para mantener el control de credenciales y la seguridad de cada cuenta,
+                los accesos se asignan de forma interna desde el panel administrativo.
+              </p>
 
-        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-8 shadow-card space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nombre completo</Label>
-            <Input id="name" placeholder="Juan Pérez" value={form.name} onChange={update("name")} className={errors.name ? "border-destructive" : ""} />
-            <FieldError error={errors.name} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Correo electrónico</Label>
-            <Input id="email" type="email" placeholder="tu@empresa.com" value={form.email} onChange={update("email")} className={errors.email ? "border-destructive" : ""} />
-            <FieldError error={errors.email} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
-            <Input id="password" type="password" placeholder="Mínimo 6 caracteres" value={form.password} onChange={update("password")} className={errors.password ? "border-destructive" : ""} />
-            <FieldError error={errors.password} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ruc">RUC de empresa</Label>
-            <Input id="ruc" placeholder="1790000000001" value={form.ruc} onChange={update("ruc")} className={errors.ruc ? "border-destructive" : ""} maxLength={13} />
-            <FieldError error={errors.ruc} />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creando..." : "Crear cuenta gratis"}
-          </Button>
-        </form>
+              <div className="mt-8 space-y-4">
+                <div className="flex items-start gap-3 rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
+                  <div>
+                    <p className="font-semibold">Registro publico desactivado</p>
+                    <p className="text-sm text-blue-50/90">
+                      Solo los administradores autorizados pueden crear usuarios nuevos.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+                  <UserCog className="mt-0.5 h-5 w-5 shrink-0" />
+                  <div>
+                    <p className="font-semibold">Credenciales asignadas por ti</p>
+                    <p className="text-sm text-blue-50/90">
+                      Puedes crear clientes, empleados o contadores desde el panel especial de accesos.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          ¿Ya tienes cuenta?{" "}
-          <Link to="/login" className="text-primary font-medium hover:underline">
-            Iniciar sesión
-          </Link>
-        </p>
+            <div className="px-8 py-10">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <LockKeyhole className="h-6 w-6" />
+              </div>
+              <h2 className="mt-6 text-2xl font-bold text-foreground">Que hacemos ahora?</h2>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                Si ya tienes usuario, entra normalmente. Si necesitas una cuenta nueva,
+                el administrador debe crearla desde la configuracion interna.
+              </p>
+
+              <div className="mt-8 space-y-3">
+                <Button asChild className="w-full">
+                  <Link to="/login">Ir a iniciar sesion</Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/">Volver al inicio</Link>
+                </Button>
+              </div>
+
+              <p className="mt-6 text-center text-sm text-muted-foreground">
+                Si eres administrador, crea credenciales desde el panel de usuarios dentro de la app.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -1,0 +1,31 @@
+<svg width="920" height="240" viewBox="0 0 920 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(48 42) rotate(45) scale(118)">
+      <stop stop-color="#7DD3FC" stop-opacity="0.72"/>
+      <stop offset="0.42" stop-color="#3B82F6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="28" y1="28" x2="184" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="0.58" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="224" height="224" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#2563EB" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <rect x="32" y="32" width="176" height="176" rx="42" fill="url(#mark)"/>
+    <rect x="32" y="32" width="176" height="176" rx="42" fill="url(#glow)"/>
+    <rect x="36" y="36" width="168" height="168" rx="38" stroke="white" stroke-opacity="0.2" stroke-width="3"/>
+    <path d="M160.7 84.8C151.1 75.5 137.8 70 123.6 70C94.9 70 71.8 93.1 71.8 121.8C71.8 150.5 94.9 173.6 123.6 173.6C137.8 173.6 150.8 168.1 160.7 158.8" stroke="white" stroke-width="17" stroke-linecap="round" opacity="0.92"/>
+    <path d="M99.6 159.6V90.1H117.2L143.5 129V90.1H161.4V159.6H143.8L117.5 120.4V159.6H99.6Z" fill="white"/>
+    <path d="M126.1 83.9L117.5 115.1H133.2L111.3 167.3L119.3 133.9H104.8L126.1 83.9Z" fill="#FBBF24"/>
+    <rect x="55" y="184" width="130" height="3" rx="1.5" fill="white" fill-opacity="0.2"/>
+  </g>
+  <text x="252" y="132" fill="#0F172A" font-family="Inter, Arial, Helvetica, sans-serif" font-size="74" font-weight="900" letter-spacing="-2">
+    Conta<tspan fill="#2563EB">Nova</tspan>
+  </text>
+  <text x="256" y="170" fill="#64748B" font-family="Inter, Arial, Helvetica, sans-serif" font-size="24" font-weight="500">
+    Facturacion y gestion para negocios
+  </text>
+</svg>

@@ -1,65 +1,70 @@
-import {
-  LayoutDashboard,
-  FileText,
-  Users,
-  Package,
-  BarChart3,
-  Settings,
-} from "lucide-react";
+import { BarChart3, FileText, LayoutDashboard, Package, Settings, Users } from "lucide-react";
+import { BrandMark } from "@/components/branding/BrandMark";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useAuth, hasPermission } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
+import { useCompany } from "@/services/companies";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useAuth, hasPermission } from "@/hooks/useAuth";
 
 const menuItems = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard, module: "dashboard" },
-  { title: "Facturación", url: "/app/facturacion", icon: FileText, module: "facturacion" },
+  { title: "Facturacion", url: "/app/facturacion", icon: FileText, module: "facturacion" },
   { title: "Clientes", url: "/app/clientes", icon: Users, module: "clientes" },
   { title: "Productos", url: "/app/productos", icon: Package, module: "productos" },
   { title: "Reportes", url: "/app/reportes", icon: BarChart3, module: "reportes" },
-  { title: "Configuración", url: "/app/configuracion", icon: Settings, module: "configuracion" },
+  { title: "Configuracion", url: "/app/configuracion", icon: Settings, module: "configuracion" },
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
   const { role } = useAuth();
+  const { data: company } = useCompany();
 
-  // Filter configuracion for non-admins but show for everyone (they can see empresa tab)
-  const visibleItems = menuItems.filter((item) => {
-    if (item.module === "configuracion") return true; // everyone sees config
-    return hasPermission(role, item.module);
-  });
+  const visibleItems = menuItems.filter((item) => hasPermission(role, item.module));
+  const sidebarTitle = role === "superadmin" ? "ContaNova" : company?.name || "ContaNova";
+  const sidebarCaption = role === "superadmin" ? "Panel de plataforma" : "Gestionado con ContaNova";
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground font-bold text-sm">C</span>
-          </div>
-          {!collapsed && (
-            <span className="text-lg font-bold text-sidebar-foreground">
-              Conta<span className="text-primary">Nova</span>
-            </span>
+      <SidebarHeader className="border-b border-sidebar-border p-4 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-1">
+        <button
+          type="button"
+          className={cn(
+            "flex w-full items-center gap-3 rounded-2xl px-1 py-1 text-left transition-colors hover:bg-sidebar-accent/70",
+            collapsed && "justify-center px-0",
           )}
-        </div>
+          onClick={toggleSidebar}
+        >
+          {role !== "superadmin" && company?.logo_url ? (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar-accent/60 p-1">
+              <img src={company.logo_url} alt={company.name} className="h-full w-full rounded-xl object-contain" />
+            </div>
+          ) : (
+            <BrandMark compact className="shrink-0" />
+          )}
+          {!collapsed && (
+            <div className="min-w-0">
+              <span className="block truncate text-base font-bold text-sidebar-foreground">{sidebarTitle}</span>
+              <span className="block text-xs text-sidebar-foreground/70">{sidebarCaption}</span>
+            </div>
+          )}
+        </button>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menú principal</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleItems.map((item) => (
@@ -68,11 +73,11 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/app"}
-                      className="hover:bg-sidebar-accent"
+                      className={cn("hover:bg-sidebar-accent", collapsed && "justify-center px-0")}
                       activeClassName="bg-sidebar-accent text-primary font-medium"
                     >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      <item.icon className={cn("h-4 w-4", !collapsed && "mr-2")} />
+                      {!collapsed && <span>{role === "superadmin" && item.module === "configuracion" ? "Empresas" : item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

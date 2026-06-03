@@ -102,6 +102,9 @@ export type Database = {
       companies: {
         Row: {
           address: string
+          auto_send_invoice_email: boolean
+          auto_send_invoice_sri: boolean
+          auto_send_invoice_whatsapp: boolean
           created_at: string
           email: string
           establecimiento: string
@@ -111,9 +114,26 @@ export type Database = {
           phone: string
           punto_emision: string
           ruc: string
+          sri_certificate_filename: string | null
+          sri_certificate_password_ciphertext: string | null
+          sri_certificate_password_iv: string | null
+          sri_certificate_path: string | null
+          sri_certificate_uploaded_at: string | null
+          sri_emission_enabled: boolean
+          sri_environment: string
+          whatsapp_business_account_id: string | null
+          whatsapp_enabled: boolean
+          whatsapp_phone_number_id: string | null
+          whatsapp_simulation_mode: boolean
+          whatsapp_template_language: string
+          whatsapp_template_name: string | null
+          whatsapp_token_configured: boolean
         }
         Insert: {
           address?: string
+          auto_send_invoice_email?: boolean
+          auto_send_invoice_sri?: boolean
+          auto_send_invoice_whatsapp?: boolean
           created_at?: string
           email?: string
           establecimiento?: string
@@ -123,9 +143,26 @@ export type Database = {
           phone?: string
           punto_emision?: string
           ruc?: string
+          sri_certificate_filename?: string | null
+          sri_certificate_password_ciphertext?: string | null
+          sri_certificate_password_iv?: string | null
+          sri_certificate_path?: string | null
+          sri_certificate_uploaded_at?: string | null
+          sri_emission_enabled?: boolean
+          sri_environment?: string
+          whatsapp_business_account_id?: string | null
+          whatsapp_enabled?: boolean
+          whatsapp_phone_number_id?: string | null
+          whatsapp_simulation_mode?: boolean
+          whatsapp_template_language?: string
+          whatsapp_template_name?: string | null
+          whatsapp_token_configured?: boolean
         }
         Update: {
           address?: string
+          auto_send_invoice_email?: boolean
+          auto_send_invoice_sri?: boolean
+          auto_send_invoice_whatsapp?: boolean
           created_at?: string
           email?: string
           establecimiento?: string
@@ -135,6 +172,20 @@ export type Database = {
           phone?: string
           punto_emision?: string
           ruc?: string
+          sri_certificate_filename?: string | null
+          sri_certificate_password_ciphertext?: string | null
+          sri_certificate_password_iv?: string | null
+          sri_certificate_path?: string | null
+          sri_certificate_uploaded_at?: string | null
+          sri_emission_enabled?: boolean
+          sri_environment?: string
+          whatsapp_business_account_id?: string | null
+          whatsapp_enabled?: boolean
+          whatsapp_phone_number_id?: string | null
+          whatsapp_simulation_mode?: boolean
+          whatsapp_template_language?: string
+          whatsapp_template_name?: string | null
+          whatsapp_token_configured?: boolean
         }
         Relationships: []
       }
@@ -193,10 +244,20 @@ export type Database = {
           company_id: string
           created_at: string
           date: string
+          delivery_status: string
+          email_recipient: string | null
+          email_sent_at: string | null
           document_type: string
           id: string
           iva: number
           number: string
+          sri_access_key: string | null
+          sri_authorization_number: string | null
+          sri_authorized_at: string | null
+          sri_environment: string | null
+          sri_messages: Json
+          sri_status: string | null
+          sri_xml: string | null
           status: string
           subtotal: number
           total: number
@@ -207,10 +268,20 @@ export type Database = {
           company_id: string
           created_at?: string
           date?: string
+          delivery_status?: string
+          email_recipient?: string | null
+          email_sent_at?: string | null
           document_type?: string
           id?: string
           iva?: number
           number?: string
+          sri_access_key?: string | null
+          sri_authorization_number?: string | null
+          sri_authorized_at?: string | null
+          sri_environment?: string | null
+          sri_messages?: Json
+          sri_status?: string | null
+          sri_xml?: string | null
           status?: string
           subtotal?: number
           total?: number
@@ -221,10 +292,20 @@ export type Database = {
           company_id?: string
           created_at?: string
           date?: string
+          delivery_status?: string
+          email_recipient?: string | null
+          email_sent_at?: string | null
           document_type?: string
           id?: string
           iva?: number
           number?: string
+          sri_access_key?: string | null
+          sri_authorization_number?: string | null
+          sri_authorized_at?: string | null
+          sri_environment?: string | null
+          sri_messages?: Json
+          sri_status?: string | null
+          sri_xml?: string | null
           status?: string
           subtotal?: number
           total?: number
@@ -348,6 +429,8 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          must_change_password: boolean
+          password_changed_at: string | null
         }
         Insert: {
           company_id?: string | null
@@ -355,6 +438,8 @@ export type Database = {
           email?: string
           full_name?: string
           id: string
+          must_change_password?: boolean
+          password_changed_at?: string | null
         }
         Update: {
           company_id?: string | null
@@ -362,6 +447,8 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          must_change_password?: boolean
+          password_changed_at?: string | null
         }
         Relationships: [
           {
@@ -414,7 +501,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "contador" | "empleado"
+      app_role: "superadmin" | "admin" | "contador" | "empleado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -542,7 +629,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "contador", "empleado"],
+      app_role: ["superadmin", "admin", "contador", "empleado"],
     },
   },
 } as const

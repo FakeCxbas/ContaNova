@@ -13,6 +13,10 @@ import { ExportMenu } from "@/components/ExportMenu";
 import { useClients, useCreateClient } from "@/services/clients";
 import { useToast } from "@/hooks/use-toast";
 import { clientSchema, validateForm, type FieldErrors } from "@/lib/validations";
+import type { ClientInput } from "@/services/clientService";
+
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Ocurrió un error inesperado. Intenta de nuevo.";
 
 export default function Clientes() {
   const [showForm, setShowForm] = useState(false);
@@ -38,13 +42,13 @@ export default function Clientes() {
     }
     const validData = validation.data;
     try {
-      await createClient.mutateAsync(validData as any);
+      await createClient.mutateAsync(validData as ClientInput);
       toast({ title: "Cliente creado", description: `${form.name} ha sido registrado.` });
       setForm({ name: "", identification: "", email: "", phone: "", address: "" });
       setErrors({});
       setShowForm(false);
-    } catch (e: any) {
-      toast({ title: "Error al crear cliente", description: e.message || "Ocurrió un error inesperado. Intenta de nuevo.", variant: "destructive" });
+    } catch (error) {
+      toast({ title: "Error al crear cliente", description: getErrorMessage(error), variant: "destructive" });
     }
   };
 

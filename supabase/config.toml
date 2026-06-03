@@ -1,4 +1,19 @@
-project_id = "quigeeratfzefyjksagq"
+project_id = "hvrxvgqeduwshsjseiwx"
 
 [functions.manage-users]
-verify_jwt = false
+verify_jwt = true
+
+[functions.send-invoice-email]
+verify_jwt = true
+
+[functions.sri-electronic-billing]
+verify_jwt = true
+
+[functions.sri-certificate-manager]
+verify_jwt = true
+
+[functions.whatsapp-settings]
+verify_jwt = true
+
+[functions.send-invoice-whatsapp]
+verify_jwt = true

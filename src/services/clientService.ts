@@ -1,14 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
-export type ClientInput = {
-  name: string;
-  identification: string;
-  email: string;
-  phone: string;
-  address: string;
-};
+export type Client = Tables<"clients">;
+export type ClientInput = Omit<TablesInsert<"clients">, "company_id" | "id" | "created_at">;
 
-export type ClientUpdate = Partial<ClientInput> & { id: string };
+export type ClientUpdate = TablesUpdate<"clients"> & { id: string };
 
 export const clientService = {
   async getAll() {

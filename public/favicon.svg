@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="18" fill="url(#bg)"/>
+  <path d="M46.8 18.8C43.7 15.8 39.4 14 34.8 14C25.5 14 18 21.5 18 30.8C18 40.1 25.5 47.6 34.8 47.6C39.4 47.6 43.6 45.8 46.8 42.8" stroke="white" stroke-width="5.5" stroke-linecap="round" opacity="0.92"/>
+  <path d="M27 43V20.5H32.7L41.2 33.1V20.5H47V43H41.3L32.8 30.3V43H27Z" fill="white"/>
+  <path d="M35.6 18.5L32.8 28.6H37.9L30.8 45.5L33.4 34.7H28.7L35.6 18.5Z" fill="#FBBF24"/>
+  <path d="M12 57H52" stroke="white" stroke-opacity="0.2"/>
+  <defs>
+    <radialGradient id="bg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(18 18) rotate(48.6) scale(60.7623)">
+      <stop stop-color="#80D8FF" stop-opacity="0.42"/>
+      <stop offset="0.32" stop-color="#80D8FF" stop-opacity="0"/>
+      <stop offset="0.321" stop-color="#2563EB"/>
+      <stop offset="0.72" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </radialGradient>
+  </defs>
+</svg>

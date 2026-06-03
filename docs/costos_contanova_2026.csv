@@ -1,0 +1,20 @@
+Categoria,Escenario,Concepto,Precio_USD,Forma_de_cobro,Total_anual_USD,Equivalente_mensual_USD,Notas,Fuente
+Escenario,Minimo funcional,Dominio .com en Porkbun,11.08,Anual,11.08,0.92,Registro de dominio para verificar en Resend y enviar facturas,https://porkbun.com/tld/com
+Escenario,Minimo funcional,Resend Free,0.00,Mensual,0.00,0.00,"1 dominio, 3000 emails por mes, 100 emails por dia",https://resend.com/pricing
+Total,Minimo funcional,TOTAL,11.08,Mixto,11.08,0.92,"Solo envio de correos, sin buzon empresarial",-
+Escenario,Profesional basica,Dominio .com en Porkbun,11.08,Anual,11.08,0.92,Registro de dominio para marca y DNS,https://porkbun.com/tld/com
+Escenario,Profesional basica,Resend Free,0.00,Mensual,0.00,0.00,"Suficiente para comenzar con facturas por correo",https://resend.com/pricing
+Escenario,Profesional basica,Google Workspace Business Starter (1 usuario),84.00,Mensual con compromiso anual,84.00,7.00,"Correo real tipo facturas@tudominio.com para recibir respuestas",https://workspace.google.com/pricing
+Total,Profesional basica,TOTAL,95.08,Mixto,95.08,7.92,"Dominio + envio + buzon empresarial",-
+Escenario,Barata con buzon,Dominio .com en Porkbun,11.08,Anual,11.08,0.92,Registro de dominio,https://porkbun.com/tld/com
+Escenario,Barata con buzon,Resend Free,0.00,Mensual,0.00,0.00,"1 dominio, 3000 emails por mes, 100 emails por dia",https://resend.com/pricing
+Escenario,Barata con buzon,Zoho Mail Free,0.00,Gratis,0.00,0.00,"Hasta 5 usuarios y 1 dominio, con limitaciones del plan gratis",https://www.zoho.com/mail/zohomail-pricing.html
+Total,Barata con buzon,TOTAL,11.08,Mixto,11.08,0.92,"Muy economica para arrancar",-
+Escenario,Mayor volumen,Dominio .com en Porkbun,11.08,Anual,11.08,0.92,Registro de dominio,https://porkbun.com/tld/com
+Escenario,Mayor volumen,Resend Pro,240.00,Mensual,240.00,20.00,"50000 emails por mes y sin limite diario",https://resend.com/pricing
+Total,Mayor volumen,TOTAL,251.08,Mixto,251.08,20.92,"Para una operacion con bastante envio de comprobantes",-
+Comparacion registrador,Registradores,Dominio .com en Porkbun,11.08,Anual,11.08,0.92,Precio orientativo directo para registro .com,https://porkbun.com/tld/com
+Comparacion registrador,Registradores,Dominio .com en Namecheap (primer año),11.28,Anual,11.28,0.94,Promo primer año,https://www.namecheap.com/promos/new-com-promo/
+Comparacion registrador,Registradores,Renovacion .com en Namecheap,18.48,Anual,18.48,1.54,Renovacion posterior,https://www.namecheap.com/promos/new-com-promo/
+Comparacion registrador,Registradores,Cloudflare Registrar,Precio de costo,Anual,Variable,Variable,Cloudflare cobra a precio de costo sin recargos,https://www.cloudflare.com/products/registrar/
+Comparacion TLD,Ecuador,Dominio .ec desde,35.00 + IVA,Anual,Variable,Variable,"Opcion mas local para Ecuador, usualmente mas cara que .com",https://new.nic.ec/planes-de-precios

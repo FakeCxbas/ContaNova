@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth, hasPermission } from "@/hooks/useAuth";
+import ForcePasswordChange from "@/pages/ForcePasswordChange";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -7,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, module }: ProtectedRouteProps) {
-  const { user, role, loading } = useAuth();
+  const { user, role, mustChangePassword, loading } = useAuth();
 
   if (loading) {
     return (
@@ -19,6 +20,10 @@ export function ProtectedRoute({ children, module }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (mustChangePassword) {
+    return <ForcePasswordChange />;
   }
 
   if (module && !hasPermission(role, module)) {
