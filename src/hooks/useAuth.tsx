@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
 type AppRole = "superadmin" | "admin" | "contador" | "empleado";
@@ -89,6 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchPasswordStatus, fetchRole]);
 
   const refreshAuthState = useCallback(async () => {
+    if (!isSupabaseConfigured) {
+      await syncSession(null);
+      return;
+    }
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -96,6 +101,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [syncSession]);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -110,6 +120,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [syncSession]);
 
   const signOut = async () => {
+    if (!isSupabaseConfigured) {
+      setUser(null);
+      setRole(null);
+      setMustChangePassword(false);
+      return;
+    }
+
     await supabase.auth.signOut();
     setUser(null);
     setRole(null);

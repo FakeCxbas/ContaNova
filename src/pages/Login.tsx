@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/ui/field-error";
 import { BrandLogo } from "@/components/branding/BrandMark";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase, supabaseConfigError } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { loginSchema, validateForm, type FieldErrors } from "@/lib/validations";
 
@@ -23,6 +23,11 @@ const Login = () => {
   const { toast } = useToast();
 
   const handleResendConfirmation = async () => {
+    if (!isSupabaseConfigured) {
+      toast({ title: "Supabase no configurado", description: supabaseConfigError, variant: "destructive" });
+      return;
+    }
+
     if (!email) {
       setErrors((prev) => ({ ...prev, email: "Ingresa tu correo para reenviar la confirmacion" }));
       return;
@@ -58,6 +63,11 @@ const Login = () => {
     e.preventDefault();
     setErrors({});
     setShowResend(false);
+
+    if (!isSupabaseConfigured) {
+      toast({ title: "Supabase no configurado", description: supabaseConfigError, variant: "destructive" });
+      return;
+    }
 
     const validation = validateForm(loginSchema, { email, password });
     if (!validation.success) {
@@ -107,6 +117,11 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-8 shadow-card space-y-5">
+          {!isSupabaseConfigured && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {supabaseConfigError}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">Correo electronico</Label>
             <Input
@@ -137,7 +152,7 @@ const Login = () => {
             />
             <FieldError error={errors.password} />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || !isSupabaseConfigured}>
             {loading ? "Ingresando..." : "Iniciar sesion"}
           </Button>
           {showResend && (
