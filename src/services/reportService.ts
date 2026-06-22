@@ -24,7 +24,7 @@ export const reportService = {
     const statusMap: Record<string, number> = {};
     const clientMap: Record<string, number> = {};
 
-    invoices.forEach((inv) => {
+    invoices.filter((inv) => inv.status !== "anulada").forEach((inv) => {
       const key = monthKey(inv.date);
       if (!salesMap[key]) salesMap[key] = { ventas: 0, iva: 0 };
       salesMap[key].ventas += Number(inv.total);

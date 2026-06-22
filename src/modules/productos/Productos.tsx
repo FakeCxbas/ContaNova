@@ -113,12 +113,12 @@ export default function Productos() {
   if (showForm) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold">Nuevo producto</h1>
             <p className="text-sm text-muted-foreground">Registra un producto o servicio</p>
           </div>
-          <Button variant="outline" onClick={() => { setShowForm(false); setErrors({}); }}>Volver</Button>
+          <Button variant="outline" onClick={() => { setShowForm(false); setErrors({}); }} className="w-full sm:w-auto">Volver</Button>
         </div>
         <Card>
           <CardContent className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
@@ -165,7 +165,7 @@ export default function Productos() {
           </CardContent>
         </Card>
         <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={createProduct.isPending}>
+          <Button onClick={handleSave} disabled={createProduct.isPending} className="w-full sm:w-auto">
             {createProduct.isPending ? "Guardando..." : "Guardar producto"}
           </Button>
         </div>
@@ -181,12 +181,12 @@ export default function Productos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">Productos</h1>
           <p className="text-sm text-muted-foreground">Catalogo de productos y servicios</p>
         </div>
-        <Button onClick={() => setShowForm(true)}><Plus className="mr-1 h-4 w-4" />Nuevo producto</Button>
+        <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto"><Plus className="mr-1 h-4 w-4" />Nuevo producto</Button>
       </div>
 
       {lowStockProducts.length > 0 && (
@@ -219,9 +219,9 @@ export default function Productos() {
       <Card>
         <CardContent className="p-4 pb-0">
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Input placeholder="Buscar por nombre..." value={searchName} onChange={(event) => setSearchName(event.target.value)} className="max-w-sm" />
+            <Input placeholder="Buscar por nombre..." value={searchName} onChange={(event) => setSearchName(event.target.value)} className="w-full sm:max-w-sm" />
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los tipos</SelectItem>
                 <SelectItem value="Bien">Bien</SelectItem>
@@ -236,7 +236,7 @@ export default function Productos() {
               <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[820px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre</TableHead>

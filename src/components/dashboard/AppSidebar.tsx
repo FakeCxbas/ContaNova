@@ -27,7 +27,7 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { state, toggleSidebar } = useSidebar();
+  const { state, toggleSidebar, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const { role } = useAuth();
   const { data: company } = useCompany();
@@ -75,6 +75,9 @@ export function AppSidebar() {
                       end={item.url === "/app"}
                       className={cn("hover:bg-sidebar-accent", collapsed && "justify-center px-0")}
                       activeClassName="bg-sidebar-accent text-primary font-medium"
+                      onClick={() => {
+                        if (isMobile) setOpenMobile(false);
+                      }}
                     >
                       <item.icon className={cn("h-4 w-4", !collapsed && "mr-2")} />
                       {!collapsed && <span>{role === "superadmin" && item.module === "configuracion" ? "Empresas" : item.title}</span>}

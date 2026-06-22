@@ -465,15 +465,15 @@ export default function FacturaDetalle() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate("/app/facturacion")} className="gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Button variant="ghost" onClick={() => navigate("/app/facturacion")} className="w-full justify-start gap-2 sm:w-auto">
           <ArrowLeft className="h-4 w-4" />Volver a facturacion
         </Button>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:justify-end">
           {invoice.status !== "anulada" && (
             <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="w-full gap-2 sm:w-auto">
                   <Mail className="h-4 w-4" />Enviar por correo
                 </Button>
               </DialogTrigger>
@@ -512,7 +512,7 @@ export default function FacturaDetalle() {
           {invoice.status !== "anulada" && balance > 0 && (
             <Dialog open={showPaymentForm} onOpenChange={setShowPaymentForm}>
               <DialogTrigger asChild>
-                <Button className="gap-2"><Plus className="h-4 w-4" />Registrar pago</Button>
+                <Button className="w-full gap-2 sm:w-auto"><Plus className="h-4 w-4" />Registrar pago</Button>
               </DialogTrigger>
               <DialogContent className="max-w-3xl overflow-x-hidden">
                 <DialogHeader>
@@ -630,16 +630,16 @@ export default function FacturaDetalle() {
           )}
 
           {invoice.status !== "anulada" && usesSri && documentType === "factura" && (
-            <Button variant="outline" className="gap-2" onClick={handleEmitSri} disabled={emittingSri}>
+            <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={handleEmitSri} disabled={emittingSri}>
               {emittingSri ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
               {emittingSri ? "Enviando..." : "Enviar al SRI"}
             </Button>
           )}
 
-          <Button variant="outline" className="gap-2" onClick={handleDownloadPdf}>
+          <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={handleDownloadPdf}>
             <Download className="h-4 w-4" />PDF
           </Button>
-          <Button variant="outline" className="gap-2" onClick={() => window.print()}>
+          <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={() => window.print()}>
             <Printer className="h-4 w-4" />Imprimir
           </Button>
         </div>
@@ -656,7 +656,7 @@ export default function FacturaDetalle() {
               Revisa la representacion imprimible de {documentLabelLower} sin descargar el archivo.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <Button variant="outline" className="gap-2" onClick={() => setPdfPreviewVersion((current) => current + 1)} disabled={pdfPreviewLoading}>
               {pdfPreviewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
               Actualizar
@@ -666,7 +666,7 @@ export default function FacturaDetalle() {
                 href={pdfPreviewUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
               >
                 <ExternalLink className="h-4 w-4" />
                 Abrir
@@ -677,13 +677,13 @@ export default function FacturaDetalle() {
         <CardContent>
           <div className="overflow-hidden rounded-2xl border border-border bg-muted/20">
             {pdfPreviewLoading && (
-              <div className="flex h-[70vh] items-center justify-center gap-3 text-sm text-muted-foreground">
+              <div className="flex h-[60vh] items-center justify-center gap-3 text-sm text-muted-foreground sm:h-[70vh]">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Generando PDF...
               </div>
             )}
             {!pdfPreviewLoading && pdfPreviewError && (
-              <div className="flex h-[70vh] flex-col items-center justify-center gap-3 px-6 text-center">
+              <div className="flex h-[60vh] flex-col items-center justify-center gap-3 px-6 text-center sm:h-[70vh]">
                 <FileText className="h-8 w-8 text-muted-foreground" />
                 <div>
                   <p className="font-medium">No se pudo mostrar el PDF</p>
@@ -696,7 +696,7 @@ export default function FacturaDetalle() {
               <iframe
                 src={`${pdfPreviewUrl}#toolbar=1&navpanes=0&view=FitH`}
                 title={`PDF ${invoice.number}`}
-                className="h-[78vh] w-full bg-background"
+                className="h-[62vh] w-full bg-background sm:h-[78vh]"
               />
             )}
           </div>
@@ -704,9 +704,9 @@ export default function FacturaDetalle() {
       </Card>
 
       <Card>
-        <CardContent className="space-y-8 p-8">
-          <div className="flex items-start justify-between">
-            <div>
+        <CardContent className="space-y-8 p-4 sm:p-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <div className="mb-1 flex items-center gap-3">
                 {company?.logo_url ? (
                   <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted/40 p-1">
@@ -726,11 +726,11 @@ export default function FacturaDetalle() {
                 </div>
               )}
             </div>
-            <div className="space-y-1 text-right">
+            <div className="space-y-1 sm:text-right">
               <h2 className="text-xl font-bold">{documentLabel.toUpperCase()}</h2>
               <p className="font-mono text-sm text-muted-foreground">{invoice.number}</p>
               <p className="text-sm text-muted-foreground">Fecha: {invoice.date}</p>
-              <div className="mt-2 flex justify-end gap-2">
+              <div className="mt-2 flex flex-wrap gap-2 sm:justify-end">
                 <InvoiceStatusBadge status={invoice.status} />
                 <Badge className={deliveryStatus.className}>{deliveryStatus.label}</Badge>
                 <Badge className={paymentStatusClass}>{paymentStatus}</Badge>
@@ -783,7 +783,7 @@ export default function FacturaDetalle() {
 
           <div>
             <h3 className="mb-3 text-sm font-semibold text-muted-foreground">DETALLE</h3>
-            <Table>
+            <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Producto</TableHead>
@@ -808,7 +808,7 @@ export default function FacturaDetalle() {
           </div>
 
           <div className="flex justify-end">
-            <div className="w-72 space-y-2 text-sm">
+            <div className="w-full space-y-2 text-sm sm:w-72">
               <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>${Number(invoice.subtotal).toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">IVA</span><span>${Number(invoice.iva).toFixed(2)}</span></div>
               <Separator />
@@ -835,7 +835,7 @@ export default function FacturaDetalle() {
           {payments.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">No hay pagos registrados.</p>
           ) : (
-            <Table>
+            <Table className="min-w-[760px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
@@ -914,14 +914,14 @@ export default function FacturaDetalle() {
           </DialogHeader>
           {selectedPaymentHistoryEvidence && (
             <div className="space-y-4 pt-2">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{selectedPaymentHistoryEvidence.evidence.name}</p>
                   <p className="text-xs text-muted-foreground">
                     {selectedPaymentHistoryEvidence.evidence.type === "application/pdf" ? "Documento PDF" : "Imagen adjunta al pago"} · {selectedPaymentHistoryEvidence.methodLabel} · {selectedPaymentHistoryEvidence.date}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {isPaymentEvidenceImage(selectedPaymentHistoryEvidence.evidence.type) && (
                     <>
                       <Button type="button" variant="outline" size="icon" onClick={() => setPreviewZoom((current) => Math.max(1, Number((current - 0.25).toFixed(2))))}>
@@ -971,7 +971,7 @@ export default function FacturaDetalle() {
                     <iframe
                       src={selectedPaymentHistoryEvidence.evidence.url}
                       title={selectedPaymentHistoryEvidence.evidence.name}
-                      className="h-[70vh] w-full bg-background"
+                      className="h-[62vh] w-full bg-background sm:h-[70vh]"
                     />
                   )}
                 </div>

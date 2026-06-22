@@ -55,12 +55,12 @@ export default function Clientes() {
   if (showForm) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold">Nuevo cliente</h1>
             <p className="text-muted-foreground text-sm">Ingresa los datos del cliente</p>
           </div>
-          <Button variant="outline" onClick={() => { setShowForm(false); setErrors({}); }}>Volver</Button>
+          <Button variant="outline" onClick={() => { setShowForm(false); setErrors({}); }} className="w-full sm:w-auto">Volver</Button>
         </div>
         <Card>
           <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -92,7 +92,7 @@ export default function Clientes() {
           </CardContent>
         </Card>
         <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={createClient.isPending}>
+          <Button onClick={handleSave} disabled={createClient.isPending} className="w-full sm:w-auto">
             {createClient.isPending ? "Guardando..." : "Guardar cliente"}
           </Button>
         </div>
@@ -107,19 +107,19 @@ export default function Clientes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">Clientes</h1>
           <p className="text-muted-foreground text-sm">Directorio de clientes</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <ExportMenu
             onCSV={() => exportClientsToCSV(filteredClients)}
             onExcel={() => exportClientsToExcel(filteredClients)}
             onPDF={() => exportClientsToPDF(filteredClients)}
             disabled={filteredClients.length === 0}
           />
-          <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-1" />Nuevo cliente</Button>
+          <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto"><Plus className="h-4 w-4 mr-1" />Nuevo cliente</Button>
         </div>
       </div>
 
@@ -129,7 +129,7 @@ export default function Clientes() {
             placeholder="Buscar por nombre o identificación..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm"
+            className="w-full sm:max-w-sm"
           />
         </CardContent>
         <CardContent className="p-0 pt-4">
@@ -138,7 +138,7 @@ export default function Clientes() {
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[720px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre</TableHead>

@@ -34,6 +34,10 @@ export default function DashboardHome() {
   const { role } = useAuth();
   const { data: invoices = [], isLoading } = useInvoices();
   const { data: clients = [] } = useClients();
+  const billableInvoices = useMemo(
+    () => invoices.filter((invoice) => invoice.status !== "anulada"),
+    [invoices],
+  );
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -42,11 +46,11 @@ export default function DashboardHome() {
   const currentMonthShort = now.toLocaleString("es", { month: "short" });
 
   const currentMonthInvoices = useMemo(
-    () => invoices.filter((invoice) => {
+    () => billableInvoices.filter((invoice) => {
       const date = new Date(invoice.date);
       return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
     }),
-    [currentMonth, currentYear, invoices],
+    [billableInvoices, currentMonth, currentYear],
   );
 
   const metrics = useMemo(() => {
@@ -112,7 +116,7 @@ export default function DashboardHome() {
 
   const topClients = useMemo(() => {
     const totals: Record<string, number> = {};
-    invoices.forEach((invoice) => {
+    billableInvoices.forEach((invoice) => {
       totals[invoice.client_name] = (totals[invoice.client_name] || 0) + Number(invoice.total);
     });
     return Object.entries(totals)
@@ -124,16 +128,16 @@ export default function DashboardHome() {
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
-  }, [clients, invoices]);
+  }, [billableInvoices, clients]);
 
   const statusDistribution = useMemo(() => {
     const map: Record<string, number> = {};
-    invoices.forEach((invoice) => {
+    billableInvoices.forEach((invoice) => {
       const label = getInvoiceStatusMeta(invoice.status).label;
       map[label] = (map[label] || 0) + 1;
     });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [invoices]);
+  }, [billableInvoices]);
 
   if (role === "superadmin") {
     return (
@@ -302,10 +306,10 @@ export default function DashboardHome() {
               <div className="flex justify-center py-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
               </div>
-            ) : invoices.length === 0 ? (
+            ) : billableInvoices.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No hay facturas registradas.</p>
             ) : (
-              <Table>
+              <Table className="min-w-[560px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Fecha</TableHead>
@@ -315,7 +319,7 @@ export default function DashboardHome() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoices.slice(0, 5).map((invoice) => {
+                  {billableInvoices.slice(0, 5).map((invoice) => {
                     return (
                       <TableRow
                         key={invoice.id}

@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNotificationSync } from "@/hooks/useNotificationSync";
 import { useCompany } from "@/services/companies";
 import { useNotifications, type Notification } from "@/stores/notificationStore";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const typeConfig: Record<Notification["type"], { icon: typeof Bell; className: string }> = {
   factura: { icon: FileText, className: "text-blue-500 bg-blue-500/10" },
@@ -53,12 +54,15 @@ export function DashboardTopbar() {
   };
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4">
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-foreground">Panel de control</p>
-        <p className="text-xs text-muted-foreground">Gestiona tu plataforma y accesos desde un solo lugar.</p>
+    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-3 md:h-14 md:px-4">
+      <div className="flex min-w-0 items-center gap-2">
+        <SidebarTrigger className="md:hidden" />
+        <div className="hidden min-w-0 sm:block">
+          <p className="truncate text-sm font-semibold text-foreground">Panel de control</p>
+          <p className="hidden truncate text-xs text-muted-foreground md:block">Gestiona tu plataforma y accesos desde un solo lugar.</p>
+        </div>
       </div>
-      <div className="flex items-center gap-2 md:gap-3">
+      <div className="flex shrink-0 items-center gap-1.5 md:gap-3">
         <ThemeToggle />
 
         <Popover>
@@ -72,7 +76,7 @@ export function DashboardTopbar() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-0" align="end">
+          <PopoverContent className="w-[calc(100vw-2rem)] p-0 sm:w-80" align="end">
             <div className="flex items-center justify-between p-3 pb-2">
               <h4 className="text-sm font-semibold">Notificaciones</h4>
               {unread > 0 && (

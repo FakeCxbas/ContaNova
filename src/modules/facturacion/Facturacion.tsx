@@ -477,12 +477,12 @@ export default function Facturacion() {
   if (showForm) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold">Crear {docTypeConfig.label.toLowerCase()}</h1>
             <p className="text-sm text-muted-foreground">Completa la informacion del comprobante comercial.</p>
           </div>
-          <Button variant="outline" onClick={() => setShowForm(false)} disabled={isCreatingInvoice}>Volver</Button>
+          <Button variant="outline" onClick={() => setShowForm(false)} disabled={isCreatingInvoice} className="w-full sm:w-auto">Volver</Button>
         </div>
 
         <Card>
@@ -542,7 +542,7 @@ export default function Facturacion() {
                   </datalist>
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={addLine} disabled={isCreatingInvoice} className="gap-2">
+                  <Button onClick={addLine} disabled={isCreatingInvoice} className="w-full gap-2 sm:w-auto">
                     <Plus className="h-4 w-4" />Agregar
                   </Button>
                 </div>
@@ -551,7 +551,7 @@ export default function Facturacion() {
               {lines.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">Agrega productos al comprobante.</p>
               ) : (
-                <Table>
+                <Table className="min-w-[760px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Producto y descripcion</TableHead>
@@ -637,7 +637,7 @@ export default function Facturacion() {
         )}
 
         <div className="flex justify-end gap-3">
-          <Button onClick={emitInvoice} disabled={createInvoice.isPending || isCreatingInvoice} className="gap-2">
+          <Button onClick={emitInvoice} disabled={createInvoice.isPending || isCreatingInvoice} className="w-full gap-2 sm:w-auto">
             {(createInvoice.isPending || isCreatingInvoice) && <Loader2 className="h-4 w-4 animate-spin" />}
             {createInvoice.isPending || isCreatingInvoice ? "Cargando..." : `Crear ${docTypeConfig.label.toLowerCase()}`}
           </Button>
@@ -670,24 +670,25 @@ export default function Facturacion() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">Facturacion</h1>
           <p className="text-sm text-muted-foreground">Gestiona tus comprobantes comerciales con estados claros y envio de PDF.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <ExportMenu
             onCSV={() => exportInvoicesToCSV(exportData)}
             onExcel={() => exportInvoicesToExcel(exportData)}
             onPDF={() => exportInvoicesToPDF(exportData)}
             disabled={filteredInvoices.length === 0}
           />
-          <Button onClick={() => setShowForm(true)}><Plus className="mr-1 h-4 w-4" />Nuevo comprobante</Button>
+          <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto"><Plus className="mr-1 h-4 w-4" />Nuevo comprobante</Button>
         </div>
       </div>
 
       <Tabs value={filterDocType} onValueChange={setFilterDocType}>
-        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 p-1">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <TabsList className="h-auto min-w-max justify-start gap-1 p-1 sm:w-full sm:flex-wrap">
           <TabsTrigger value="all" className="gap-1.5">
             <FileText className="h-4 w-4" />Todos
           </TabsTrigger>
@@ -702,6 +703,7 @@ export default function Facturacion() {
             );
           })}
         </TabsList>
+        </div>
       </Tabs>
 
       <Card>
@@ -742,7 +744,7 @@ export default function Facturacion() {
               <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[840px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Tipo</TableHead>
