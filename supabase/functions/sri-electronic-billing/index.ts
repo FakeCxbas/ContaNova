@@ -600,6 +600,38 @@ Deno.serve(async (req) => {
 
     const reception = await receiveAtSri(signature.signedXml, environment);
     if (reception.state !== "RECIBIDA") {
+      const receptionText = reception.messages.join(" ").toUpperCase();
+      if (receptionText.includes("CLAVE ACCESO REGISTRADA")) {
+        const authorization = await authorizeAtSri(accessKey, environment);
+        const sriStatus = authorization.state === "AUTORIZADO" ? "autorizada" : "no_autorizada";
+        const messages = [
+          ...signature.messages,
+          ...reception.messages,
+          ...(authorization.messages.length ? authorization.messages : [`Autorizacion SRI: ${authorization.state || "SIN RESPUESTA"}`]),
+        ];
+
+        await supabase.from("invoices").update({
+          sri_environment: environment,
+          sri_status: sriStatus,
+          sri_access_key: accessKey,
+          sri_authorization_number: authorization.authorizationNumber || null,
+          sri_authorized_at: authorization.authorizedAt || null,
+          sri_xml: signature.signedXml,
+          sri_messages: messages,
+          status: sriStatus === "autorizada" ? "emitida" : invoice.status,
+        }).eq("id", invoice.id);
+
+        return json({
+          ok: sriStatus === "autorizada",
+          status: sriStatus,
+          accessKey,
+          authorizationNumber: authorization.authorizationNumber || null,
+          authorizedAt: authorization.authorizedAt || null,
+          environment,
+          messages,
+        });
+      }
+
       await supabase.from("invoices").update({
         sri_environment: environment,
         sri_status: "devuelta",
