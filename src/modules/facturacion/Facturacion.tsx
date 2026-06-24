@@ -370,6 +370,9 @@ export default function Facturacion() {
           sriAuthorizationNumber: effectiveInvoice.sri_authorization_number,
           sriAuthorizedAt: effectiveInvoice.sri_authorized_at,
           sriEnvironment: effectiveInvoice.sri_environment,
+          sriMessages: Array.isArray(effectiveInvoice.sri_messages)
+            ? effectiveInvoice.sri_messages.map((message) => String(message))
+            : undefined,
         },
         items: lines.map((line) => ({
           name: line.name,
@@ -423,6 +426,9 @@ export default function Facturacion() {
                 sriAuthorizationNumber: effectiveInvoice.sri_authorization_number,
                 sriAuthorizedAt: effectiveInvoice.sri_authorized_at,
                 sriEnvironment: effectiveInvoice.sri_environment,
+                sriMessages: Array.isArray(effectiveInvoice.sri_messages)
+                  ? effectiveInvoice.sri_messages.map((message) => String(message))
+                  : undefined,
               },
               items: lines.map((line) => ({
                 name: line.name,

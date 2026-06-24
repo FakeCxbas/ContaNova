@@ -86,9 +86,11 @@ export type InvoicePdfPayload = {
     totalPaid?: number;
     balance?: number;
     sriEnvironment?: string | null;
+    sriStatus?: string | null;
     sriAccessKey?: string | null;
     sriAuthorizationNumber?: string | null;
     sriAuthorizedAt?: string | null;
+    sriMessages?: string[] | null;
   };
   items: {
     name: string;
@@ -254,8 +256,18 @@ function sriSequence(number: string) {
 
 function sriStatusLabel(payload: InvoicePdfPayload) {
   if (payload.invoice.sriAuthorizationNumber) return "Autorizado";
+  const status = (payload.invoice.sriStatus || "").toLowerCase();
+  if (status === "devuelta") return "Devuelta por SRI";
+  if (status === "no_autorizada") return "No autorizada";
+  if (status === "pendiente_firma") return "Pendiente de firma";
+  if (status === "error") return "Error SRI";
   if (payload.invoice.sriAccessKey) return "Pendiente SRI";
   return "Sin emitir";
+}
+
+function sriPendingText(payload: InvoicePdfPayload) {
+  const label = sriStatusLabel(payload);
+  return label === "Sin emitir" ? "PENDIENTE" : label.toUpperCase();
 }
 
 function isFinalConsumer(payload: InvoicePdfPayload) {
@@ -295,6 +307,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
     const rightX = left + leftCol + gap;
     const accessKey = payload.invoice.sriAccessKey || "";
     const authorizationNumber = payload.invoice.sriAuthorizationNumber || accessKey || "";
+    const pendingLabel = sriPendingText(payload);
     const documentNumber = sriSequence(payload.invoice.number);
     const environment = (payload.invoice.sriEnvironment || "").toLowerCase().includes("prod") ? "PRODUCCION" : "PRUEBAS";
 
@@ -370,14 +383,14 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
     doc.text(`No. ${documentNumber}`, rightX + 2, top + 39);
     doc.text("NUMERO DE AUTORIZACION", rightX + 2, top + 49);
     doc.setFont("helvetica", "normal");
-    doc.text(authorizationNumber || "PENDIENTE", rightX + 2, top + 57);
+    doc.text(authorizationNumber || pendingLabel, rightX + 2, top + 57);
     labelValue("AMBIENTE :", environment, rightX + 2, top + 68, 20);
     labelValue("EMISION :", "NORMAL", rightX + 2, top + 76, 20);
     doc.setFont("helvetica", "bold");
     doc.text("FECHA Y HORA DE", rightX + 2, top + 84);
     doc.text("AUTORIZACION:", rightX + 2, top + 88);
     doc.setFont("helvetica", "normal");
-    doc.text(formatAuthorizationDate(payload.invoice.sriAuthorizedAt) || "PENDIENTE", rightX + 32, top + 86);
+    doc.text(formatAuthorizationDate(payload.invoice.sriAuthorizedAt) || pendingLabel, rightX + 32, top + 86);
     doc.setFont("helvetica", "bold");
     doc.text("CLAVE DE ACCESO", rightX + rightCol / 2, top + 82, { align: "center" } as never);
     drawAccessKeyBars(accessKey, rightX + 4, top + 86, rightCol - 8, 10);
@@ -506,6 +519,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
   const groupedAccessKey = groupLongCode(accessKey);
   const groupedAuthorizationNumber = groupLongCode(authorizationNumber);
   const authorizedLabel = sriStatusLabel(payload);
+  const pendingLabel = sriPendingText(payload);
   const formattedAuthorizationDate = formatAuthorizationDate(payload.invoice.sriAuthorizedAt);
   const documentNumber = sriSequence(payload.invoice.number);
   const environment = (payload.invoice.sriEnvironment || "").toLowerCase().includes("prod") ? "PRODUCCION" : "PRUEBAS";
@@ -746,14 +760,14 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
   doc.text("NUMERO DE AUTORIZACION", 112, 43);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.2);
-  doc.text(doc.splitTextToSize(groupedAuthorizationNumber || "PENDIENTE", 79), 112, 48);
+  doc.text(doc.splitTextToSize(groupedAuthorizationNumber || pendingLabel, 79), 112, 48);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
   doc.text(`AMBIENTE: ${environment}`, 112, 58);
   doc.text("EMISION: NORMAL", 153, 58);
   doc.text("FECHA Y HORA DE AUTORIZACION:", 112, 64);
   doc.setFont("helvetica", "normal");
-  doc.text(formattedAuthorizationDate || "PENDIENTE", 112, 69);
+  doc.text(formattedAuthorizationDate || pendingLabel, 112, 69);
   doc.setFont("helvetica", "bold");
   doc.text("CLAVE DE ACCESO", 152, 75, { align: "center" } as never);
   drawAccessKeyBars(accessKey, 112, 77, 80, 6);
@@ -1160,4 +1174,3 @@ export async function exportReportsToPDF(data: ReportData) {
 
   doc.save(`reporte_financiero_${today()}.pdf`);
 }
-

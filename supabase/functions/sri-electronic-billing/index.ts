@@ -84,6 +84,24 @@ const numericOnly = (value: string | null | undefined) => String(value ?? "").re
 
 const money = (value: number) => Number(value || 0).toFixed(2);
 
+const sriText = (value: string | number | null | undefined, maxLength?: number) => {
+  const text = String(value ?? "")
+    .split("")
+    .map((char) => {
+      const code = char.charCodeAt(0);
+      return code <= 31 || code === 127 ? " " : char;
+    })
+    .join("")
+    .replace(/\s+/g, " ")
+    .trim();
+  return maxLength ? text.slice(0, maxLength) : text;
+};
+
+const sriCode = (value: string | null | undefined) => {
+  const code = sriText(value || "SIN-CODIGO", 25).replace(/[^A-Za-z0-9._-]/g, "");
+  return code || "SIN-CODIGO";
+};
+
 const formatSriDate = (value: string) => {
   const [year, month, day] = value.split("-");
   return `${day}/${month}/${year}`;
@@ -183,7 +201,8 @@ const buildInvoiceXml = (params: {
   const emissionPoint = numericOnly(company.punto_emision || "001").padStart(3, "0").slice(0, 3);
   const sequential = sequentialFromNumber(invoice.number);
   const buyerId = numericOnly(client?.identification || "9999999999999") || "9999999999999";
-  const buyerName = client?.name || invoice.client_name || "Consumidor final";
+  const buyerName = sriText(client?.name || invoice.client_name || "Consumidor final", 300);
+  const buyerAddress = sriText(client?.address || "Sin direccion", 300);
   const envCode = environment === "produccion" ? "2" : "1";
   const taxSummary = items.reduce<Record<string, { rate: number; base: number; value: number }>>((summary, item) => {
     const rate = Number(item.iva || 0);
@@ -213,8 +232,8 @@ const buildInvoiceXml = (params: {
       const taxValue = base * (taxRate / 100);
       return [
         "    <detalle>",
-        `      <codigoPrincipal>${escapeXml(item.product_id || "SIN-CODIGO")}</codigoPrincipal>`,
-        `      <descripcion>${escapeXml(item.product_name)}</descripcion>`,
+        `      <codigoPrincipal>${escapeXml(sriCode(item.product_id))}</codigoPrincipal>`,
+        `      <descripcion>${escapeXml(sriText(item.product_name, 300))}</descripcion>`,
         `      <cantidad>${money(Number(item.quantity))}</cantidad>`,
         `      <precioUnitario>${money(Number(item.price))}</precioUnitario>`,
         "      <descuento>0.00</descuento>",
@@ -239,23 +258,24 @@ const buildInvoiceXml = (params: {
     "  <infoTributaria>",
     `    <ambiente>${envCode}</ambiente>`,
     "    <tipoEmision>1</tipoEmision>",
-    `    <razonSocial>${escapeXml(company.name)}</razonSocial>`,
-    `    <nombreComercial>${escapeXml(company.name)}</nombreComercial>`,
+    `    <razonSocial>${escapeXml(sriText(company.name, 300))}</razonSocial>`,
+    `    <nombreComercial>${escapeXml(sriText(company.name, 300))}</nombreComercial>`,
     `    <ruc>${escapeXml(numericOnly(company.ruc))}</ruc>`,
     `    <claveAcceso>${accessKey}</claveAcceso>`,
     `    <codDoc>${documentCode(invoice.document_type)}</codDoc>`,
     `    <estab>${establishment}</estab>`,
     `    <ptoEmi>${emissionPoint}</ptoEmi>`,
     `    <secuencial>${sequential}</secuencial>`,
-    `    <dirMatriz>${escapeXml(company.address)}</dirMatriz>`,
+    `    <dirMatriz>${escapeXml(sriText(company.address || "Sin direccion", 300))}</dirMatriz>`,
     "  </infoTributaria>",
     "  <infoFactura>",
     `    <fechaEmision>${formatSriDate(invoice.date)}</fechaEmision>`,
-    `    <dirEstablecimiento>${escapeXml(company.address)}</dirEstablecimiento>`,
+    `    <dirEstablecimiento>${escapeXml(sriText(company.address || "Sin direccion", 300))}</dirEstablecimiento>`,
     "    <obligadoContabilidad>NO</obligadoContabilidad>",
     `    <tipoIdentificacionComprador>${identificationType(buyerId)}</tipoIdentificacionComprador>`,
     `    <razonSocialComprador>${escapeXml(buyerName)}</razonSocialComprador>`,
     `    <identificacionComprador>${escapeXml(buyerId)}</identificacionComprador>`,
+    `    <direccionComprador>${escapeXml(buyerAddress)}</direccionComprador>`,
     `    <totalSinImpuestos>${money(Number(invoice.subtotal))}</totalSinImpuestos>`,
     "    <totalDescuento>0.00</totalDescuento>",
     "    <totalConImpuestos>",

@@ -141,9 +141,11 @@ export default function FacturaDetalle() {
     : totalPaid > 0
       ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400"
     : "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400";
-  const sriMessages = Array.isArray(invoice?.sri_messages)
-    ? invoice.sri_messages.map((item) => String(item))
-    : [];
+  const sriMessages = useMemo(() => (
+    Array.isArray(invoice?.sri_messages)
+      ? invoice.sri_messages.map((item) => String(item))
+      : []
+  ), [invoice?.sri_messages]);
   const sriStatusLabel = invoice?.sri_status
     ? invoice.sri_status.replaceAll("_", " ")
     : "Sin emitir";
@@ -185,9 +187,11 @@ export default function FacturaDetalle() {
       totalPaid,
       balance: Math.max(0, balance),
       sriEnvironment: invoice?.sri_environment,
+      sriStatus: invoice?.sri_status,
       sriAccessKey: invoice?.sri_access_key,
       sriAuthorizationNumber: invoice?.sri_authorization_number,
       sriAuthorizedAt: invoice?.sri_authorized_at,
+      sriMessages,
     },
     items: items.map((item) => ({
       name: item.product_name,
@@ -196,7 +200,7 @@ export default function FacturaDetalle() {
       iva: Number(item.iva),
       subtotal: item.quantity * Number(item.price),
     })),
-  }), [balance, client?.address, client?.email, client?.identification, client?.phone, company?.address, company?.email, company?.establecimiento, company?.logo_url, company?.name, company?.phone, company?.punto_emision, company?.ruc, deliveryStatus.label, documentLabel, invoice?.client_name, invoice?.date, invoice?.iva, invoice?.number, invoice?.sri_access_key, invoice?.sri_authorization_number, invoice?.sri_authorized_at, invoice?.sri_environment, invoice?.subtotal, invoice?.total, items, paymentStatus, status.label, totalPaid]);
+  }), [balance, client?.address, client?.email, client?.identification, client?.phone, company?.address, company?.email, company?.establecimiento, company?.logo_url, company?.name, company?.phone, company?.punto_emision, company?.ruc, deliveryStatus.label, documentLabel, invoice?.client_name, invoice?.date, invoice?.iva, invoice?.number, invoice?.sri_access_key, invoice?.sri_authorization_number, invoice?.sri_authorized_at, invoice?.sri_environment, invoice?.sri_status, invoice?.subtotal, invoice?.total, items, paymentStatus, sriMessages, status.label, totalPaid]);
 
   useEffect(() => {
     setEmailRecipient(client?.email || "");
@@ -1045,7 +1049,5 @@ export default function FacturaDetalle() {
     </div>
   );
 }
-
-
 
 
