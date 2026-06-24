@@ -8,9 +8,8 @@ import { BrandLogo } from "@/components/branding/BrandMark";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-
-const getErrorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : "No se pudo actualizar la contrasena.";
+import { getAuthErrorMessage } from "@/lib/auth-errors";
+import { welcomeEmailService } from "@/services/welcomeEmailService";
 
 export default function ForcePasswordChange() {
   const { user, refreshAuthState, signOut } = useAuth();
@@ -39,19 +38,28 @@ export default function ForcePasswordChange() {
       const { error: authError } = await supabase.auth.updateUser({ password });
       if (authError) throw authError;
 
+      await welcomeEmailService.send().catch((welcomeError) => {
+        console.warn("No se pudo enviar el correo de bienvenida", welcomeError);
+      });
+
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
           must_change_password: false,
           password_changed_at: new Date().toISOString(),
+          welcome_shown_at: new Date().toISOString(),
         })
         .eq("id", user.id);
       if (profileError) throw profileError;
 
       await refreshAuthState();
-      toast({ title: "Contrasena actualizada", description: "Ya puedes usar ContaNova normalmente." });
+      toast({ title: "Bienvenido a ContaNova", description: "Tu cuenta quedo lista. Ya puedes gestionar tu facturacion normalmente." });
     } catch (error) {
-      toast({ title: "No se pudo cambiar la contrasena", description: getErrorMessage(error), variant: "destructive" });
+      toast({
+        title: "No se pudo cambiar la contrasena",
+        description: getAuthErrorMessage(error, "No se pudo actualizar la contrasena."),
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

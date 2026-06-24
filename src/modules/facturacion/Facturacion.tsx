@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle,
@@ -9,6 +9,7 @@ import {
   Loader2,
   MoreHorizontal,
   Plus,
+  Printer,
   Shield,
   Truck,
   XCircle,
@@ -17,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,6 +101,10 @@ export default function Facturacion() {
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [productSearch, setProductSearch] = useState("");
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [createdPrintPayload, setCreatedPrintPayload] = useState<InvoicePdfPayload | null>(null);
+  const [createdPrintInvoice, setCreatedPrintInvoice] = useState<Invoice | null>(null);
+  const [openingPrintPdf, setOpeningPrintPdf] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -169,6 +175,38 @@ export default function Facturacion() {
 
   const docTypeConfig = DOCUMENT_TYPES[selectedDocType];
   const needsProducts = selectedDocType !== "retencion" && selectedDocType !== "guia_remision";
+  const isSanViernesCompany = company?.name?.trim().toLowerCase() === "san viernes";
+  const finalConsumerClient = clients.find((client) => client.name.trim().toLowerCase() === "consumidor final");
+
+  useEffect(() => {
+    if (!isSanViernesCompany || !finalConsumerClient?.id) return;
+    setSelectedClientId(finalConsumerClient.id);
+  }, [finalConsumerClient?.id, isSanViernesCompany]);
+
+  const openPrintPdf = async () => {
+    if (!createdPrintPayload || !createdPrintInvoice) return;
+
+    const printWindow = window.open("", "_blank");
+    setOpeningPrintPdf(true);
+    try {
+      const pdfBlob = await generateInvoicePdfBlob(createdPrintPayload);
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+
+      if (printWindow) {
+        printWindow.location.href = pdfUrl;
+      } else {
+        window.open(pdfUrl, "_blank");
+      }
+
+      setTimeout(() => URL.revokeObjectURL(pdfUrl), 60_000);
+      setPrintDialogOpen(false);
+    } catch (error) {
+      if (printWindow) printWindow.close();
+      toast({ title: "No se pudo abrir el PDF", description: getErrorMessage(error), variant: "destructive" });
+    } finally {
+      setOpeningPrintPdf(false);
+    }
+  };
 
   const emitInvoice = async () => {
     if (isCreatingInvoiceRef.current || isCreatingInvoice || createInvoice.isPending) {
@@ -296,6 +334,52 @@ export default function Facturacion() {
 
       let autoEmailMessage = "";
       const creationMessage = `${docTypeConfig.label} ${nextNumber} creada correctamente.`;
+      const printPayload: InvoicePdfPayload = {
+        company: {
+          name: company?.name || "ContaNova",
+          ruc: company?.ruc,
+          address: company?.address,
+          email: company?.email,
+          phone: company?.phone,
+          establishment: company?.establecimiento,
+          emissionPoint: company?.punto_emision,
+          accountingRequired: false,
+          logoUrl: company?.logo_url,
+        },
+        client: {
+          name: client?.name || effectiveInvoice.client_name,
+          identification: client?.identification,
+          address: client?.address,
+          email: client?.email,
+          phone: client?.phone,
+        },
+        invoice: {
+          number: effectiveInvoice.number,
+          date: effectiveInvoice.date,
+          type: DOCUMENT_TYPES[selectedDocType]?.label || "Factura",
+          status: getInvoiceStatusMeta(normalizeInvoiceStatus(effectiveInvoice.status)).label,
+          subtotal: Number(effectiveInvoice.subtotal),
+          iva: Number(effectiveInvoice.iva),
+          total: Number(effectiveInvoice.total),
+          paymentStatus: "Pendiente",
+          deliveryStatus: getInvoiceDeliveryStatusMeta(effectiveInvoice.delivery_status).label,
+          totalPaid: 0,
+          balance: Number(effectiveInvoice.total),
+          sriStatus: effectiveInvoice.sri_status,
+          sriAccessKey: effectiveInvoice.sri_access_key,
+          sriAuthorizationNumber: effectiveInvoice.sri_authorization_number,
+          sriAuthorizedAt: effectiveInvoice.sri_authorized_at,
+          sriEnvironment: effectiveInvoice.sri_environment,
+        },
+        items: lines.map((line) => ({
+          name: line.name,
+          quantity: line.quantity,
+          price: line.price,
+          iva: line.iva,
+          subtotal: line.quantity * line.price,
+        })),
+      };
+
       if (selectedDocType === "factura" && company?.auto_send_invoice_email) {
         if (!client?.email) {
           autoEmailMessage = " No se envio automaticamente porque el cliente no tiene correo.";
@@ -418,12 +502,15 @@ export default function Facturacion() {
         autoWhatsappMessage = " Autoenvio WhatsApp desactivado.";
       }
 
+      setCreatedPrintPayload(printPayload);
+      setCreatedPrintInvoice(effectiveInvoice);
       setLines([]);
       setProductSearch("");
       setSelectedClientId("");
       setSelectedDocType("factura");
       setSelectedDate(getEcuadorDateString());
       setShowForm(false);
+      setPrintDialogOpen(true);
 
       toast({
         title: `${docTypeConfig.label} creada`,
@@ -503,8 +590,8 @@ export default function Facturacion() {
             </div>
             <div className="space-y-2">
               <Label>Cliente</Label>
-              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
+              <Select value={selectedClientId} onValueChange={setSelectedClientId} disabled={isSanViernesCompany}>
+                <SelectTrigger><SelectValue placeholder={isSanViernesCompany ? "Consumidor final" : "Seleccionar cliente"} /></SelectTrigger>
                 <SelectContent>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
@@ -557,7 +644,7 @@ export default function Facturacion() {
                       <TableHead>Producto y descripcion</TableHead>
                       <TableHead className="w-24">Cantidad</TableHead>
                       <TableHead className="w-28">Precio</TableHead>
-                      <TableHead className="w-20">IVA %</TableHead>
+                      <TableHead className="w-28">IVA %</TableHead>
                       <TableHead className="w-24 text-center">Stock</TableHead>
                       <TableHead className="w-28 text-right">Subtotal</TableHead>
                       <TableHead className="w-16" />
@@ -600,7 +687,7 @@ export default function Facturacion() {
                               step="0.01"
                               value={line.iva}
                               onChange={(event) => updateLine(index, "iva", event.target.value)}
-                              className="text-center"
+                              className="min-w-[88px] text-center"
                               disabled={isCreatingInvoice}
                             />
                           </TableCell>
@@ -670,6 +757,36 @@ export default function Facturacion() {
 
   return (
     <div className="space-y-6">
+      <Dialog open={printDialogOpen} onOpenChange={setPrintDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Desea imprimir el comprobante?</DialogTitle>
+            <DialogDescription>
+              El comprobante {createdPrintInvoice?.number} fue creado. Elige un formato para abrirlo y enviarlo a impresion.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button variant="outline" className="h-20 flex-col gap-2" onClick={openPrintPdf} disabled={openingPrintPdf}>
+              {openingPrintPdf ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileText className="h-5 w-5 text-red-500" />}
+              PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="h-20 flex-col gap-2"
+              onClick={() => {
+                if (createdPrintInvoice?.id) navigate(`/app/facturacion/${createdPrintInvoice.id}`);
+              }}
+            >
+              <Printer className="h-5 w-5 text-primary" />
+              Ver detalle
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPrintDialogOpen(false)}>No imprimir ahora</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">Facturacion</h1>
@@ -826,4 +943,3 @@ export default function Facturacion() {
     </div>
   );
 }
-

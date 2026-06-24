@@ -6,6 +6,9 @@ verify_jwt = true
 [functions.send-invoice-email]
 verify_jwt = true
 
+[functions.send-welcome-email]
+verify_jwt = true
+
 [functions.sri-electronic-billing]
 verify_jwt = true
 

@@ -258,6 +258,13 @@ function sriStatusLabel(payload: InvoicePdfPayload) {
   return "Sin emitir";
 }
 
+function isFinalConsumer(payload: InvoicePdfPayload) {
+  const clientName = payload.client.name.trim().toLowerCase();
+  const clientIdentification = (payload.client.identification || "").replace(/\D/g, "");
+
+  return clientName === "consumidor final" || clientIdentification === "9999999999999";
+}
+
 function groupLongCode(value: string, groupSize = 4) {
   return value.replace(/\s+/g, "").replace(new RegExp(`(.{${groupSize}})`, "g"), "$1 ").trim();
 }
@@ -493,6 +500,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
   const darkText = [15, 23, 42] as const;
   const softText = [100, 116, 139] as const;
   const lightFill = [248, 250, 252] as const;
+  const isSimpleFinalConsumerReceipt = isFinalConsumer(payload);
   const accessKey = payload.invoice.sriAccessKey || "";
   const authorizationNumber = payload.invoice.sriAuthorizationNumber || "";
   const groupedAccessKey = groupLongCode(accessKey);
@@ -527,6 +535,143 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
 
   doc.setTextColor(...darkText);
   const logo = await loadImageForPdf(payload.company.logoUrl);
+
+  if (isSimpleFinalConsumerReceipt) {
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(218, 226, 235);
+    doc.setLineWidth(0.35);
+    doc.roundedRect(14, 14, 182, 58, 4, 4, "S");
+    doc.setFillColor(...primaryBlue);
+    doc.roundedRect(14, 14, 182, 17, 4, 4, "F");
+    doc.rect(14, 24, 182, 7, "F");
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(payload.invoice.type.toUpperCase(), 19, 25);
+    doc.setFontSize(9);
+    doc.text(`No. ${payload.invoice.number}`, 191, 25, { align: "right" } as never);
+
+    if (logo) {
+      const maxLogoWidth = 42;
+      const maxLogoHeight = 18;
+      const ratio = Math.min(maxLogoWidth / logo.width, maxLogoHeight / logo.height);
+      const logoWidth = logo.width * ratio;
+      const logoHeight = logo.height * ratio;
+      doc.addImage(logo.dataUrl, logo.format, 19, 39 - logoHeight / 2, logoWidth, logoHeight);
+    } else {
+      doc.setTextColor(...darkText);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(payload.company.name || "Empresa", 19, 42);
+    }
+
+    doc.setTextColor(...darkText);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(payload.company.name || "Empresa", 19, 49);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...softText);
+    const companyContact = [payload.company.email, payload.company.phone, payload.company.address].filter(Boolean).join(" · ");
+    if (companyContact) {
+      doc.text(doc.splitTextToSize(companyContact, 120).slice(0, 1), 19, 56);
+    }
+
+    doc.setTextColor(...softText);
+    doc.setFillColor(...lightFill);
+    doc.roundedRect(14, 80, 182, 28, 3, 3, "F");
+    doc.setDrawColor(218, 226, 235);
+    doc.roundedRect(14, 80, 182, 28, 3, 3, "S");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...darkText);
+    doc.text("COMPROBANTE COMERCIAL", 18, 89);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...softText);
+    doc.text("Cliente", 18, 98);
+    doc.text("Fecha", 118, 98);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...darkText);
+    doc.text(payload.client.name || "Consumidor final", 42, 98);
+    doc.text(payload.invoice.date, 140, 98);
+
+    autoTable(doc as never, {
+      head: [["Producto", "Cant.", "P. Unit.", "IVA", "Subtotal"]],
+      body: payload.items.map((item) => [
+        item.name,
+        String(item.quantity),
+        formatCurrency(item.price),
+        `${item.iva}%`,
+        formatCurrency(item.subtotal),
+      ]),
+      startY: 118,
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        textColor: darkText[0],
+        lineColor: [226, 232, 240],
+      },
+      headStyles: {
+        fillColor: [30, 64, 175],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 90 },
+        1: { halign: "center", cellWidth: 18 },
+        2: { halign: "right", cellWidth: 28 },
+        3: { halign: "center", cellWidth: 18 },
+        4: { halign: "right", cellWidth: 28 },
+      },
+      tableWidth: 182,
+      margin: { left: 14, right: 14 },
+    });
+
+    const summaryStartY = (doc.lastAutoTable?.finalY || 118) + 10;
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(118, summaryStartY, 78, 34, 4, 4, "F");
+    doc.setDrawColor(218, 226, 235);
+    doc.setLineWidth(0.35);
+    doc.roundedRect(118, summaryStartY, 78, 34, 4, 4, "S");
+    doc.setTextColor(...darkText);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Subtotal", 124, summaryStartY + 8);
+    doc.text(formatCurrency(payload.invoice.subtotal), 189, summaryStartY + 8, { align: "right" } as never);
+    doc.text("IVA", 124, summaryStartY + 15);
+    doc.text(formatCurrency(payload.invoice.iva), 189, summaryStartY + 15, { align: "right" } as never);
+    doc.setDrawColor(203, 213, 225);
+    doc.line(124, summaryStartY + 19, 190, summaryStartY + 19);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Total", 124, summaryStartY + 27);
+    doc.text(formatCurrency(payload.invoice.total), 189, summaryStartY + 27, { align: "right" } as never);
+
+    const footerStartY = summaryStartY + 44;
+    doc.setTextColor(...softText);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    const footerLines = doc.splitTextToSize(
+      "Este documento es un comprobante comercial simple. No corresponde a una autorizacion tributaria del SRI.",
+      182,
+    );
+    footerLines.forEach((line, index) => doc.text(line, 14, footerStartY + index * 4.5));
+
+    const pageCount = doc.getNumberOfPages();
+    for (let page = 1; page <= pageCount; page += 1) {
+      doc.setPage(page);
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`${payload.company.name || "Empresa"} - Generado ${today()} - Pag. ${page}/${pageCount}`, 14, doc.internal.pageSize.height - 8);
+    }
+
+    return doc;
+  }
+
   doc.setFillColor(...lightFill);
   doc.roundedRect(14, 14, 88, 72, 4, 4, "F");
   doc.setDrawColor(218, 226, 235);
@@ -1015,5 +1160,4 @@ export async function exportReportsToPDF(data: ReportData) {
 
   doc.save(`reporte_financiero_${today()}.pdf`);
 }
-
 

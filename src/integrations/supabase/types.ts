@@ -431,6 +431,7 @@ export type Database = {
           id: string
           must_change_password: boolean
           password_changed_at: string | null
+          welcome_shown_at: string | null
         }
         Insert: {
           company_id?: string | null
@@ -440,6 +441,7 @@ export type Database = {
           id: string
           must_change_password?: boolean
           password_changed_at?: string | null
+          welcome_shown_at?: string | null
         }
         Update: {
           company_id?: string | null
@@ -449,6 +451,7 @@ export type Database = {
           id?: string
           must_change_password?: boolean
           password_changed_at?: string | null
+          welcome_shown_at?: string | null
         }
         Relationships: [
           {

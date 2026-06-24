@@ -7,10 +7,8 @@ import { FieldError } from "@/components/ui/field-error";
 import { BrandLogo } from "@/components/branding/BrandMark";
 import { isSupabaseConfigured, supabase, supabaseConfigError } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getAuthErrorMessage } from "@/lib/auth-errors";
 import { loginSchema, validateForm, type FieldErrors } from "@/lib/validations";
-
-const getErrorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : "No se pudo iniciar sesion. Intenta de nuevo.";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -44,7 +42,11 @@ const Login = () => {
       });
 
       if (error) {
-        toast({ title: "No se pudo reenviar el correo", description: error.message, variant: "destructive" });
+        toast({
+          title: "No se pudo reenviar el correo",
+          description: getAuthErrorMessage(error, "No se pudo reenviar el correo."),
+          variant: "destructive",
+        });
         return;
       }
 
@@ -53,7 +55,11 @@ const Login = () => {
         description: `Enviamos un nuevo correo de confirmacion a ${email}.`,
       });
     } catch (error) {
-      toast({ title: "No se pudo reenviar el correo", description: getErrorMessage(error), variant: "destructive" });
+      toast({
+        title: "No se pudo reenviar el correo",
+        description: getAuthErrorMessage(error, "No se pudo reenviar el correo."),
+        variant: "destructive",
+      });
     } finally {
       setResending(false);
     }
@@ -84,11 +90,7 @@ const Login = () => {
 
       if (error) {
         const isUnconfirmed = error.message === "Email not confirmed";
-        const message = error.message === "Invalid login credentials"
-          ? "Correo o contrasena incorrectos. Verifica tus datos."
-          : isUnconfirmed
-            ? "Tu correo no ha sido confirmado. Revisa tu bandeja de entrada."
-            : error.message;
+        const message = getAuthErrorMessage(error, "No se pudo iniciar sesion. Intenta de nuevo.");
 
         setShowResend(isUnconfirmed);
         toast({ title: "Error de autenticacion", description: message, variant: "destructive" });
@@ -97,7 +99,11 @@ const Login = () => {
 
       navigate("/app");
     } catch (error) {
-      toast({ title: "Error de autenticacion", description: getErrorMessage(error), variant: "destructive" });
+      toast({
+        title: "Error de autenticacion",
+        description: getAuthErrorMessage(error, "No se pudo iniciar sesion. Intenta de nuevo."),
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
