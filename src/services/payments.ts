@@ -4,9 +4,12 @@ import { useCompanyId } from "./companies";
 import { activityService } from "./activityService";
 
 export function usePayments(invoiceId?: string) {
+  const { data: companyId } = useCompanyId();
+
   return useQuery({
-    queryKey: ["payments", invoiceId],
-    queryFn: () => paymentService.getAll(invoiceId),
+    queryKey: ["payments", companyId, invoiceId],
+    queryFn: () => paymentService.getAll(companyId!, invoiceId),
+    enabled: !!companyId,
   });
 }
 

@@ -5,9 +5,12 @@ import { activityService } from "./activityService";
 import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export function useInvoices() {
+  const { data: companyId } = useCompanyId();
+
   return useQuery({
-    queryKey: ["invoices"],
-    queryFn: () => invoiceService.getAll(),
+    queryKey: ["invoices", companyId],
+    queryFn: () => invoiceService.getAll(companyId!),
+    enabled: !!companyId,
   });
 }
 

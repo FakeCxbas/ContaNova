@@ -4,9 +4,12 @@ import { useCompanyId } from "./companies";
 import { activityService } from "./activityService";
 
 export function useClients() {
+  const { data: companyId } = useCompanyId();
+
   return useQuery({
-    queryKey: ["clients"],
-    queryFn: () => clientService.getAll(),
+    queryKey: ["clients", companyId],
+    queryFn: () => clientService.getAll(companyId!),
+    enabled: !!companyId,
   });
 }
 

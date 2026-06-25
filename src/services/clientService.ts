@@ -7,8 +7,12 @@ export type ClientInput = Omit<TablesInsert<"clients">, "company_id" | "id" | "c
 export type ClientUpdate = TablesUpdate<"clients"> & { id: string };
 
 export const clientService = {
-  async getAll() {
-    const { data, error } = await supabase.from("clients").select("*").order("name");
+  async getAll(companyId: string) {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("name");
     if (error) throw error;
     return data;
   },

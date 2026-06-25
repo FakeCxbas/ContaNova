@@ -13,10 +13,10 @@ function monthKey(dateStr: string) {
 }
 
 export const reportService = {
-  async getReportData() {
+  async getReportData(companyId: string) {
     const [invoices, payments] = await Promise.all([
-      invoiceService.getAll(),
-      paymentService.getAll(),
+      invoiceService.getAll(companyId),
+      paymentService.getAll(companyId),
     ]);
 
     const salesMap: Record<string, { ventas: number; iva: number }> = {};

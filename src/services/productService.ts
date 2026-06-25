@@ -7,8 +7,12 @@ export type ProductInput = Omit<TablesInsert<"products">, "company_id" | "id" | 
 export type ProductUpdate = TablesUpdate<"products"> & { id: string };
 
 export const productService = {
-  async getAll() {
-    const { data, error } = await supabase.from("products").select("*").order("name");
+  async getAll(companyId: string) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("name");
     if (error) throw error;
     return data;
   },

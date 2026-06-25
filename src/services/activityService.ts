@@ -70,20 +70,22 @@ export const activityService = {
     }
   },
 
-  async getRecent(limit = 20) {
+  async getRecent(companyId: string, limit = 20) {
     const { data, error } = await supabase
       .from("activity_logs")
       .select("*")
+      .eq("company_id", companyId)
       .order("created_at", { ascending: false })
       .limit(limit);
     if (error) throw error;
     return data;
   },
 
-  async getByEntity(entityType: EntityType, entityId: string, limit = 30) {
+  async getByEntity(companyId: string, entityType: EntityType, entityId: string, limit = 30) {
     const { data, error } = await supabase
       .from("activity_logs")
       .select("*")
+      .eq("company_id", companyId)
       .eq("entity_type", entityType)
       .eq("entity_id", entityId)
       .order("created_at", { ascending: false })

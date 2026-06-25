@@ -5,8 +5,12 @@ export type Payment = Tables<"payments">;
 export type PaymentInput = Omit<TablesInsert<"payments">, "company_id" | "id" | "created_at">;
 
 export const paymentService = {
-  async getAll(invoiceId?: string) {
-    let q = supabase.from("payments").select("*").order("date", { ascending: false });
+  async getAll(companyId: string, invoiceId?: string) {
+    let q = supabase
+      .from("payments")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("date", { ascending: false });
     if (invoiceId) q = q.eq("invoice_id", invoiceId);
     const { data, error } = await q;
     if (error) throw error;

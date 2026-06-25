@@ -22,10 +22,11 @@ export type InvoiceInput = Omit<TablesInsert<"invoices">, "company_id" | "id" | 
 };
 
 export const invoiceService = {
-  async getAll() {
+  async getAll(companyId: string) {
     const { data, error } = await supabase
       .from("invoices")
       .select("*")
+      .eq("company_id", companyId)
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data;
