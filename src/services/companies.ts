@@ -8,6 +8,10 @@ export function useCompanyId() {
     queryKey: ["company_id", user?.id],
     queryFn: () => companyService.getCompanyId(user!.id),
     enabled: !!user,
+    placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
+    retry: 3,
+    staleTime: 60_000,
   });
 }
 

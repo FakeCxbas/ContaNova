@@ -10,6 +10,11 @@ export function usePayments(invoiceId?: string) {
     queryKey: ["payments", companyId, invoiceId],
     queryFn: () => paymentService.getAll(companyId!, invoiceId),
     enabled: !!companyId,
+    placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+    structuralSharing: (oldData, newData) =>
+      oldData && oldData.length > 0 && newData.length === 0 ? oldData : newData,
   });
 }
 

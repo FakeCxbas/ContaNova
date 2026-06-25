@@ -11,6 +11,11 @@ export function useInvoices() {
     queryKey: ["invoices", companyId],
     queryFn: () => invoiceService.getAll(companyId!),
     enabled: !!companyId,
+    placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+    structuralSharing: (oldData, newData) =>
+      oldData && oldData.length > 0 && newData.length === 0 ? oldData : newData,
   });
 }
 

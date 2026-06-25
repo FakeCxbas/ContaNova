@@ -45,7 +45,10 @@ export const companyService = {
       .maybeSingle();
 
     if (error) throw error;
-    return data?.company_id as string | null;
+    if (!data?.company_id) {
+      throw new Error("No se encontro empresa activa para el usuario.");
+    }
+    return data.company_id as string;
   },
 
   async getById(companyId: string) {
