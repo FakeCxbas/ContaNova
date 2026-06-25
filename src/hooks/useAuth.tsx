@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("profiles")
         .select("must_change_password")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("No se pudo obtener el estado de clave temporal", error);
@@ -110,10 +110,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       void syncSession(session?.user ?? null);
-    });
-
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      return syncSession(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
