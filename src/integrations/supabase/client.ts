@@ -13,6 +13,18 @@ export const supabaseConfigError =
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+const getSupabaseAuthStorageKey = () => {
+  if (!SUPABASE_PROJECT_REF) return null;
+  return `sb-${SUPABASE_PROJECT_REF}-auth-token`;
+};
+
+if (typeof window !== "undefined" && window.location.pathname === "/login") {
+  const authStorageKey = getSupabaseAuthStorageKey();
+  if (authStorageKey) {
+    window.localStorage.removeItem(authStorageKey);
+  }
+}
+
 export const supabase = createClient<Database>(
   SUPABASE_URL || "https://placeholder.supabase.co",
   SUPABASE_PUBLISHABLE_KEY || "placeholder-anon-key",
@@ -28,6 +40,8 @@ export const supabase = createClient<Database>(
 export const clearSupabaseAuthStorage = () => {
   if (typeof window === "undefined" || !SUPABASE_PROJECT_REF) return;
 
-  const authStorageKey = `sb-${SUPABASE_PROJECT_REF}-auth-token`;
+  const authStorageKey = getSupabaseAuthStorageKey();
+  if (!authStorageKey) return;
+
   window.localStorage.removeItem(authStorageKey);
 };
