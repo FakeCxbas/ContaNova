@@ -32,7 +32,7 @@ export const supabase = createClient<Database>(
   auth: {
     storage: localStorage,
     persistSession: true,
-    autoRefreshToken: true,
+    autoRefreshToken: false,
     lock: async (_name, _acquireTimeout, fn) => fn(),
   }
   }
