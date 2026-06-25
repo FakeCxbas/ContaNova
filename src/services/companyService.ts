@@ -38,11 +38,13 @@ const setStoredAutoEmailPreference = (companyId: string, enabled: boolean) => {
 
 export const companyService = {
   async getCompanyId(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("company_id")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
+
+    if (error) throw error;
     return data?.company_id as string | null;
   },
 
@@ -51,8 +53,10 @@ export const companyService = {
       .from("companies")
       .select("*")
       .eq("id", companyId)
-      .single();
+      .maybeSingle();
     if (error) throw error;
+    if (!data) return null;
+
     return {
       ...data,
       auto_send_invoice_email:

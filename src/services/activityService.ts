@@ -49,7 +49,7 @@ export const activityService = {
         .from("profiles")
         .select("full_name")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       const desc = params.description || ACTION_LABELS[params.action] || params.action;
 

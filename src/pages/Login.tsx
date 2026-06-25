@@ -83,6 +83,8 @@ const Login = () => {
 
     try {
       setLoading(true);
+      await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+
       const { error } = await supabase.auth.signInWithPassword({
         email: validation.data.email,
         password: validation.data.password,
