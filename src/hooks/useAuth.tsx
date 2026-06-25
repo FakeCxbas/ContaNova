@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
+import { useLocation } from "react-router-dom";
+import { clearSupabaseAuthStorage, isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
 type AppRole = "superadmin" | "admin" | "contador" | "empleado";
@@ -30,10 +31,12 @@ function normalizeRole(value: unknown): AppRole {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [loading, setLoading] = useState(true);
+  const shouldSyncAuth = location.pathname.startsWith("/app");
 
   const fetchRole = useCallback(async (userId: string) => {
     try {
@@ -89,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchPasswordStatus, fetchRole]);
 
   const refreshAuthState = useCallback(async () => {
-    if (!isSupabaseConfigured) {
+    if (!shouldSyncAuth || !isSupabaseConfigured) {
       await syncSession(null);
       return;
     }
@@ -98,13 +101,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { session },
     } = await supabase.auth.getSession();
     await syncSession(session?.user ?? null);
-  }, [syncSession]);
+  }, [shouldSyncAuth, syncSession]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
+    if (!shouldSyncAuth) {
+      clearSupabaseAuthStorage();
+      void syncSession(null);
       return;
     }
+
+    if (!isSupabaseConfigured) {
+      void syncSession(null);
+      return;
+    }
+
+    void refreshAuthState();
 
     const {
       data: { subscription },
@@ -113,7 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [syncSession]);
+  }, [refreshAuthState, shouldSyncAuth, syncSession]);
 
   const signOut = async () => {
     if (!isSupabaseConfigured) {
