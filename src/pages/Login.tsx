@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,12 +17,9 @@ const Login = () => {
   const [resending, setResending] = useState(false);
   const [showResend, setShowResend] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  useEffect(() => {
-    clearSupabaseAuthStorage();
-  }, []);
 
   const handleResendConfirmation = async () => {
     if (!isSupabaseConfigured) {
@@ -72,6 +69,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setFormError("");
     setShowResend(false);
 
     if (!isSupabaseConfigured) {
@@ -89,7 +87,7 @@ const Login = () => {
       setLoading(true);
       clearSupabaseAuthStorage();
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: validation.data.email,
         password: validation.data.password,
       });
@@ -99,15 +97,25 @@ const Login = () => {
         const message = getAuthErrorMessage(error, "No se pudo iniciar sesion. Intenta de nuevo.");
 
         setShowResend(isUnconfirmed);
+        setFormError(message);
         toast({ title: "Error de autenticacion", description: message, variant: "destructive" });
         return;
       }
 
-      navigate("/app");
+      if (!data.session) {
+        const message = "Supabase no devolvio una sesion valida. Intenta iniciar sesion otra vez.";
+        setFormError(message);
+        toast({ title: "Error de autenticacion", description: message, variant: "destructive" });
+        return;
+      }
+
+      navigate("/app", { replace: true });
     } catch (error) {
+      const message = getAuthErrorMessage(error, "No se pudo iniciar sesion. Intenta de nuevo.");
+      setFormError(message);
       toast({
         title: "Error de autenticacion",
-        description: getAuthErrorMessage(error, "No se pudo iniciar sesion. Intenta de nuevo."),
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -138,7 +146,9 @@ const Login = () => {
             <Label htmlFor="email">Correo electronico</Label>
             <Input
               id="email"
+              name="email"
               type="email"
+              autoComplete="username"
               placeholder="tu@empresa.com"
               value={email}
               onChange={(e) => {
@@ -153,7 +163,9 @@ const Login = () => {
             <Label htmlFor="password">Contrasena</Label>
             <Input
               id="password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => {
@@ -167,6 +179,11 @@ const Login = () => {
           <Button type="submit" className="w-full" disabled={loading || !isSupabaseConfigured}>
             {loading ? "Ingresando..." : "Iniciar sesion"}
           </Button>
+          {formError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {formError}
+            </div>
+          )}
           {showResend && (
             <Button type="button" variant="outline" className="w-full" onClick={handleResendConfirmation} disabled={resending}>
               {resending ? "Reenviando..." : "Reenviar correo de confirmacion"}

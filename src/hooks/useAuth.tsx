@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import { clearSupabaseAuthStorage, isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
 type AppRole = "superadmin" | "admin" | "contador" | "empleado";
@@ -105,7 +105,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!shouldSyncAuth) {
-      clearSupabaseAuthStorage();
       void syncSession(null);
       return;
     }

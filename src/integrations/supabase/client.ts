@@ -18,13 +18,6 @@ const getSupabaseAuthStorageKey = () => {
   return `sb-${SUPABASE_PROJECT_REF}-auth-token`;
 };
 
-if (typeof window !== "undefined" && window.location.pathname === "/login") {
-  const authStorageKey = getSupabaseAuthStorageKey();
-  if (authStorageKey) {
-    window.localStorage.removeItem(authStorageKey);
-  }
-}
-
 export const supabase = createClient<Database>(
   SUPABASE_URL || "https://placeholder.supabase.co",
   SUPABASE_PUBLISHABLE_KEY || "placeholder-anon-key",
@@ -32,7 +25,7 @@ export const supabase = createClient<Database>(
   auth: {
     storage: localStorage,
     persistSession: true,
-    autoRefreshToken: false,
+    autoRefreshToken: true,
     lock: async (_name, _acquireTimeout, fn) => fn(),
   }
   }
