@@ -4,6 +4,7 @@ import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_PROJECT_REF = SUPABASE_URL ? new URL(SUPABASE_URL).hostname.split(".")[0] : null;
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 export const supabaseConfigError =
@@ -23,3 +24,10 @@ export const supabase = createClient<Database>(
   }
   }
 );
+
+export const clearSupabaseAuthStorage = () => {
+  if (typeof window === "undefined" || !SUPABASE_PROJECT_REF) return;
+
+  const authStorageKey = `sb-${SUPABASE_PROJECT_REF}-auth-token`;
+  window.localStorage.removeItem(authStorageKey);
+};

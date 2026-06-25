@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/ui/field-error";
 import { BrandLogo } from "@/components/branding/BrandMark";
-import { isSupabaseConfigured, supabase, supabaseConfigError } from "@/integrations/supabase/client";
+import { clearSupabaseAuthStorage, isSupabaseConfigured, supabase, supabaseConfigError } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthErrorMessage } from "@/lib/auth-errors";
 import { loginSchema, validateForm, type FieldErrors } from "@/lib/validations";
@@ -19,6 +19,10 @@ const Login = () => {
   const [errors, setErrors] = useState<FieldErrors>({});
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    clearSupabaseAuthStorage();
+  }, []);
 
   const handleResendConfirmation = async () => {
     if (!isSupabaseConfigured) {
@@ -83,7 +87,7 @@ const Login = () => {
 
     try {
       setLoading(true);
-      await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
+      clearSupabaseAuthStorage();
 
       const { error } = await supabase.auth.signInWithPassword({
         email: validation.data.email,
