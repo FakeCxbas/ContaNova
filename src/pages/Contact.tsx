@@ -93,8 +93,8 @@ const Contact = () => {
                 </div>
 
                 <div className="mt-8 space-y-3 text-sm leading-7 text-muted-foreground">
-                  <p>Mensual: <span className="font-semibold text-foreground">$1 por factura</span></p>
-                  <p>Anual: <span className="font-semibold text-foreground">$0.50 por factura</span></p>
+                  <p>Mensual: <span className="font-semibold text-foreground">$0.33 por factura</span></p>
+                  <p>Anual: <span className="font-semibold text-foreground">$0.30 por factura</span></p>
                   <p>Personalizado: <span className="font-semibold text-foreground">cotizacion gratis segun volumen y operacion</span></p>
                 </div>
 

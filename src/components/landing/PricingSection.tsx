@@ -8,15 +8,15 @@ const whatsappLink = "https://wa.me/593998134331?text=Hola%2C%20quiero%20una%20c
 const billingOptions = {
   mensual: {
     label: "Mensual",
-    rate: 1,
-    helper: "$1 por factura",
-    note: "Pagas solo por la capacidad mensual que necesitas.",
+    rate: 0.33,
+    helper: "$0.33 por factura",
+    note: "Pagas una bolsa mensual clara, sin costo de instalacion.",
   },
   anual: {
     label: "Anual",
-    rate: 0.5,
-    helper: "$0.50 por factura",
-    note: "Pagas el año completo con una tarifa más baja por factura.",
+    rate: 0.30,
+    helper: "$0.30 por factura",
+    note: "Pagas el ano completo y bajas un poco mas el costo por factura.",
   },
 } as const;
 
@@ -25,10 +25,10 @@ type BillingMode = keyof typeof billingOptions;
 const plans = [
   {
     name: "Inicio",
-    invoices: 25,
+    invoices: 30,
     description: "Para negocios que apenas arrancan y necesitan una operación limpia desde el primer día.",
     features: [
-      "25 facturas al mes",
+      "30 facturas al mes",
       "1 usuario administrador",
       "Clientes y productos",
       "PDF comercial y control básico",
@@ -90,11 +90,11 @@ const PricingSection = () => {
             Planes y cotizaciones
           </Badge>
           <h2 className="text-3xl font-black tracking-tight text-foreground md:text-5xl">
-            Elige si quieres operar por mes o asegurar mejor precio por año
+            Facturacion electronica simple desde $0.33 por factura
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-            ContaNova ahora se cotiza por volumen de facturas. Puedes trabajar mes a mes o bajar el costo por factura
-            con una propuesta anual.
+            ContaNova se cotiza por volumen para que pagues segun tu operacion real. Puedes trabajar mes a mes
+            o bajar el costo por factura con una propuesta anual.
           </p>
 
           <div className="mx-auto mt-8 inline-flex rounded-full border border-white/10 bg-card/80 p-1 shadow-[0_14px_50px_rgba(15,23,42,0.18)]">
@@ -130,7 +130,7 @@ const PricingSection = () => {
             const monthlyPrice = plan.invoices * billing.rate;
             const annualPrice = monthlyPrice * 12;
             const displayPrice = billingMode === "mensual" ? monthlyPrice : annualPrice;
-            const displaySuffix = billingMode === "mensual" ? "/mes" : "/año";
+            const displaySuffix = billingMode === "mensual" ? "/mes" : "/ano";
 
             return (
               <article
@@ -174,7 +174,7 @@ const PricingSection = () => {
 
                   <p className="mt-2 text-sm text-muted-foreground">
                     {billingMode === "anual"
-                      ? "Pago anual claro, sin equivalentes mensuales escondidos."
+                      ? `${formatUsd(billing.rate)} por factura con pago anual.`
                       : "Sin permanencia obligatoria."}
                   </p>
 
