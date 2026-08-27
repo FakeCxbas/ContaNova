@@ -32,6 +32,7 @@ type InvoiceRow = {
   created_at?: string;
   document_type: string;
   number: string;
+  status: string;
   subtotal: number;
   iva: number;
   total: number;
@@ -131,6 +132,31 @@ const sequentialFromNumber = (number: string) => {
   return (match?.[1] || "1").padStart(9, "0");
 };
 
+const sequentialNumberValue = (number: string) => Number(sequentialFromNumber(number));
+
+const documentPrefix = (documentType: string) => {
+  const prefixes: Record<string, string> = {
+    factura: "FAC",
+    nota_credito: "NC",
+    nota_debito: "ND",
+    guia_remision: "GR",
+    retencion: "RET",
+  };
+  return prefixes[documentType] || "FAC";
+};
+
+const formatDocumentNumber = (documentType: string, company: CompanyRow, sequence: number) => {
+  const establishment = numericOnly(company.establecimiento || "001").padStart(3, "0").slice(0, 3);
+  const emissionPoint = numericOnly(company.punto_emision || "001").padStart(3, "0").slice(0, 3);
+  return `${documentPrefix(documentType)}-${establishment}-${emissionPoint}-${String(sequence).padStart(9, "0")}`;
+};
+
+const sriMessageText = (messages: unknown[]) => messages.map((message) => String(message)).join(" ").toUpperCase();
+
+const isAccessKeyRegistered = (messages: unknown[]) => sriMessageText(messages).includes("CLAVE ACCESO REGISTRADA");
+
+const isSequentialRegistered = (messages: unknown[]) => sriMessageText(messages).includes("SECUENCIAL REGISTRADO");
+
 const modulo11CheckDigit = (input: string) => {
   let factor = 2;
   let total = 0;
@@ -186,6 +212,44 @@ const buildAccessKey = (params: {
     "1",
   ].join("");
   return `${core}${modulo11CheckDigit(core)}`;
+};
+
+const moveInvoiceToNextSequential = async (
+  supabase: ReturnType<typeof createClient>,
+  invoice: InvoiceRow,
+  company: CompanyRow,
+  messages: unknown[],
+) => {
+  const prefix = `${documentPrefix(invoice.document_type)}-${numericOnly(company.establecimiento || "001").padStart(3, "0").slice(0, 3)}-${numericOnly(company.punto_emision || "001").padStart(3, "0").slice(0, 3)}-`;
+  const { data: invoices } = await supabase
+    .from("invoices")
+    .select("number")
+    .eq("company_id", invoice.company_id)
+    .eq("document_type", invoice.document_type)
+    .like("number", `${prefix}%`);
+
+  const maxLocalSequence = (invoices || []).reduce((max: number, current: { number?: string | null }) => {
+    const number = current.number || "";
+    return number.startsWith(prefix) ? Math.max(max, sequentialNumberValue(number)) : max;
+  }, 0);
+
+  const nextSequence = Math.max(maxLocalSequence + 1, sequentialNumberValue(invoice.number) + 1);
+  const nextNumber = formatDocumentNumber(invoice.document_type, company, nextSequence);
+  const nextMessages = [
+    ...messages.map((message) => String(message)),
+    `El secuencial ${sequentialFromNumber(invoice.number)} ya esta registrado en el SRI; ContaNova reintentara con ${String(nextSequence).padStart(9, "0")}.`,
+  ];
+
+  const { error } = await supabase.from("invoices").update({
+    number: nextNumber,
+    sri_access_key: null,
+    sri_status: "reintentando_secuencial",
+    sri_messages: nextMessages,
+  }).eq("id", invoice.id);
+
+  if (error) throw error;
+
+  return { ...invoice, number: nextNumber, sri_access_key: null, sri_status: "reintentando_secuencial", sri_messages: nextMessages };
 };
 
 const buildInvoiceXml = (params: {
@@ -528,16 +592,18 @@ Deno.serve(async (req) => {
       }, 400);
     }
 
-    const previousMessages = JSON.stringify(invoice.sri_messages || []).toUpperCase();
-    const accessKeyDateMismatch = !!invoice.sri_access_key
-      && invoice.sri_access_key.slice(0, 8) !== formatAccessKeyDate(invoice.date);
+    let workingInvoice: InvoiceRow = invoice;
+    const previousMessages = JSON.stringify(workingInvoice.sri_messages || []).toUpperCase();
+    const accessKeyDateMismatch = !!workingInvoice.sri_access_key
+      && workingInvoice.sri_access_key.slice(0, 8) !== formatAccessKeyDate(workingInvoice.date);
     const mustRegenerateAccessKey =
       accessKeyDateMismatch
-      || (invoice.sri_status === "no_autorizada" && previousMessages.includes("FIRMA INVALIDA"))
-      || (invoice.sri_status === "devuelta" && previousMessages.includes("FECHA EMISION EXTEMPORANEA"));
-    const accessKey = !mustRegenerateAccessKey && invoice.sri_access_key
-      ? invoice.sri_access_key
-      : buildAccessKey({ invoice, company, environment });
+      || (workingInvoice.sri_status === "no_autorizada" && previousMessages.includes("FIRMA INVALIDA"))
+      || (workingInvoice.sri_status === "devuelta" && previousMessages.includes("FECHA EMISION EXTEMPORANEA"))
+      || (workingInvoice.sri_status === "devuelta" && previousMessages.includes("SECUENCIAL REGISTRADO"));
+    let accessKey = !mustRegenerateAccessKey && workingInvoice.sri_access_key
+      ? workingInvoice.sri_access_key
+      : buildAccessKey({ invoice: workingInvoice, company, environment });
 
     if (action === "check_authorization") {
       const authorization = await authorizeAtSri(accessKey, environment);
@@ -549,8 +615,8 @@ Deno.serve(async (req) => {
         sri_authorization_number: authorization.authorizationNumber || null,
         sri_authorized_at: authorization.authorizedAt || null,
         sri_messages: authorization.messages,
-        status: sriStatus === "autorizada" ? "emitida" : invoice.status,
-      }).eq("id", invoice.id);
+        status: sriStatus === "autorizada" ? "emitida" : workingInvoice.status,
+      }).eq("id", workingInvoice.id);
 
       return json({
         ok: sriStatus === "autorizada",
@@ -563,120 +629,141 @@ Deno.serve(async (req) => {
       });
     }
 
-    const xml = buildInvoiceXml({
-      invoice,
-      items,
-      company,
-      client,
-      accessKey,
-      environment,
-    });
-
-    const signature = await signXml(supabase, xml, company, {
-      accessKey,
-      invoiceId: invoice.id,
-      companyId: company.id,
-      ruc: company.ruc,
-      documentType: invoice.document_type,
-    });
-    if (!signature.signedXml) {
-      await supabase.from("invoices").update({
-        sri_environment: environment,
-        sri_status: "pendiente_firma",
-        sri_access_key: accessKey,
-        sri_xml: xml,
-        sri_messages: signature.messages,
-      }).eq("id", invoice.id);
-
-      return json({
-        ok: false,
-        status: "pendiente_firma",
+    const maxSequentialRetries = 20;
+    for (let attempt = 0; attempt <= maxSequentialRetries; attempt += 1) {
+      accessKey = attempt === 0 && accessKey
+        ? accessKey
+        : buildAccessKey({ invoice: workingInvoice, company, environment });
+      const xml = buildInvoiceXml({
+        invoice: workingInvoice,
+        items,
+        company,
+        client,
         accessKey,
         environment,
-        messages: signature.messages,
-        requiresConfiguration: true,
       });
-    }
 
-    const reception = await receiveAtSri(signature.signedXml, environment);
-    if (reception.state !== "RECIBIDA") {
-      const receptionText = reception.messages.join(" ").toUpperCase();
-      if (receptionText.includes("CLAVE ACCESO REGISTRADA")) {
-        const authorization = await authorizeAtSri(accessKey, environment);
-        const sriStatus = authorization.state === "AUTORIZADO" ? "autorizada" : "no_autorizada";
-        const messages = [
-          ...signature.messages,
-          ...reception.messages,
-          ...(authorization.messages.length ? authorization.messages : [`Autorizacion SRI: ${authorization.state || "SIN RESPUESTA"}`]),
-        ];
-
+      const signature = await signXml(supabase, xml, company, {
+        accessKey,
+        invoiceId: workingInvoice.id,
+        companyId: company.id,
+        ruc: company.ruc,
+        documentType: workingInvoice.document_type,
+      });
+      if (!signature.signedXml) {
         await supabase.from("invoices").update({
           sri_environment: environment,
-          sri_status: sriStatus,
+          sri_status: "pendiente_firma",
           sri_access_key: accessKey,
-          sri_authorization_number: authorization.authorizationNumber || null,
-          sri_authorized_at: authorization.authorizedAt || null,
-          sri_xml: signature.signedXml,
-          sri_messages: messages,
-          status: sriStatus === "autorizada" ? "emitida" : invoice.status,
-        }).eq("id", invoice.id);
+          sri_xml: xml,
+          sri_messages: signature.messages,
+        }).eq("id", workingInvoice.id);
 
         return json({
-          ok: sriStatus === "autorizada",
-          status: sriStatus,
+          ok: false,
+          status: "pendiente_firma",
           accessKey,
-          authorizationNumber: authorization.authorizationNumber || null,
-          authorizedAt: authorization.authorizedAt || null,
           environment,
-          messages,
+          messages: signature.messages,
+          requiresConfiguration: true,
         });
       }
 
+      const reception = await receiveAtSri(signature.signedXml, environment);
+      if (reception.state !== "RECIBIDA") {
+        if (isAccessKeyRegistered(reception.messages)) {
+          const authorization = await authorizeAtSri(accessKey, environment);
+          const sriStatus = authorization.state === "AUTORIZADO" ? "autorizada" : "no_autorizada";
+          const messages = [
+            ...signature.messages,
+            ...reception.messages,
+            ...(authorization.messages.length ? authorization.messages : [`Autorizacion SRI: ${authorization.state || "SIN RESPUESTA"}`]),
+          ];
+
+          await supabase.from("invoices").update({
+            sri_environment: environment,
+            sri_status: sriStatus,
+            sri_access_key: accessKey,
+            sri_authorization_number: authorization.authorizationNumber || null,
+            sri_authorized_at: authorization.authorizedAt || null,
+            sri_xml: signature.signedXml,
+            sri_messages: messages,
+            status: sriStatus === "autorizada" ? "emitida" : workingInvoice.status,
+          }).eq("id", workingInvoice.id);
+
+          return json({
+            ok: sriStatus === "autorizada",
+            status: sriStatus,
+            accessKey,
+            authorizationNumber: authorization.authorizationNumber || null,
+            authorizedAt: authorization.authorizedAt || null,
+            environment,
+            messages,
+          });
+        }
+
+        if (isSequentialRegistered(reception.messages) && attempt < maxSequentialRetries) {
+          workingInvoice = await moveInvoiceToNextSequential(supabase, workingInvoice, company, [
+            ...signature.messages,
+            ...reception.messages,
+          ]);
+          continue;
+        }
+
+        await supabase.from("invoices").update({
+          sri_environment: environment,
+          sri_status: "devuelta",
+          sri_access_key: accessKey,
+          sri_xml: signature.signedXml,
+          sri_messages: reception.messages,
+        }).eq("id", workingInvoice.id);
+
+        return json({
+          ok: false,
+          status: "devuelta",
+          accessKey,
+          environment,
+          messages: reception.messages.length ? reception.messages : [`Recepcion SRI: ${reception.state || "SIN RESPUESTA"}`],
+        });
+      }
+
+      const authorization = await authorizeAtSri(accessKey, environment);
+      const sriStatus = authorization.state === "AUTORIZADO" ? "autorizada" : "no_autorizada";
+      const messages = [
+        ...signature.messages,
+        ...(reception.messages.length ? reception.messages : ["Comprobante recibido por el SRI."]),
+        ...(authorization.messages.length ? authorization.messages : [`Autorizacion SRI: ${authorization.state || "SIN RESPUESTA"}`]),
+      ];
+
       await supabase.from("invoices").update({
         sri_environment: environment,
-        sri_status: "devuelta",
+        sri_status: sriStatus,
         sri_access_key: accessKey,
+        sri_authorization_number: authorization.authorizationNumber || null,
+        sri_authorized_at: authorization.authorizedAt || null,
         sri_xml: signature.signedXml,
-        sri_messages: reception.messages,
-      }).eq("id", invoice.id);
+        sri_messages: messages,
+        status: sriStatus === "autorizada" ? "emitida" : workingInvoice.status,
+      }).eq("id", workingInvoice.id);
 
       return json({
-        ok: false,
-        status: "devuelta",
+        ok: sriStatus === "autorizada",
+        status: sriStatus,
         accessKey,
+        authorizationNumber: authorization.authorizationNumber || null,
+        authorizedAt: authorization.authorizedAt || null,
         environment,
-        messages: reception.messages.length ? reception.messages : [`Recepcion SRI: ${reception.state || "SIN RESPUESTA"}`],
+        messages,
       });
     }
 
-    const authorization = await authorizeAtSri(accessKey, environment);
-    const sriStatus = authorization.state === "AUTORIZADO" ? "autorizada" : "no_autorizada";
-    const messages = [
-      ...signature.messages,
-      ...(reception.messages.length ? reception.messages : ["Comprobante recibido por el SRI."]),
-      ...(authorization.messages.length ? authorization.messages : [`Autorizacion SRI: ${authorization.state || "SIN RESPUESTA"}`]),
-    ];
-
-    await supabase.from("invoices").update({
-      sri_environment: environment,
-      sri_status: sriStatus,
-      sri_access_key: accessKey,
-      sri_authorization_number: authorization.authorizationNumber || null,
-      sri_authorized_at: authorization.authorizedAt || null,
-      sri_xml: signature.signedXml,
-      sri_messages: messages,
-      status: sriStatus === "autorizada" ? "emitida" : invoice.status,
-    }).eq("id", invoice.id);
-
     return json({
-      ok: sriStatus === "autorizada",
-      status: sriStatus,
+      ok: false,
+      status: "devuelta",
       accessKey,
-      authorizationNumber: authorization.authorizationNumber || null,
-      authorizedAt: authorization.authorizedAt || null,
       environment,
-      messages,
-    });
+      messages: ["No se encontro un secuencial libre para esta factura despues de varios reintentos."],
+    }, 409);
   } catch (error) {
     const message = error instanceof Error ? error.message : "No se pudo emitir el comprobante.";
     return json({ ok: false, status: "error", messages: [message] }, 500);
