@@ -190,7 +190,9 @@ export default function Facturacion() {
     setOpeningPrintPdf(true);
     try {
       const pdfBlob = await generateInvoicePdfBlob(createdPrintPayload);
-      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const cleanNumber = (createdPrintInvoice.number || "sin-numero").replace(/[/\\:*?"<>|\s]+/g, "-");
+      const pdfFile = new File([pdfBlob], `Factura_${cleanNumber}.pdf`, { type: "application/pdf" });
+      const pdfUrl = URL.createObjectURL(pdfFile);
 
       if (printWindow) {
         printWindow.location.href = pdfUrl;

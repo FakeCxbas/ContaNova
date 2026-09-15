@@ -235,7 +235,10 @@ export default function FacturaDetalle() {
     void generateInvoicePdfBlob(invoicePdfPayload)
       .then((blob) => {
         if (cancelled) return;
-        objectUrl = URL.createObjectURL(blob);
+        const cleanNumber = (invoice.number || "sin-numero").replace(/[/\\:*?"<>|\s]+/g, "-");
+        const cleanDocType = (documentLabel || "Factura").replace(/\s+/g, "_");
+        const pdfFile = new File([blob], `${cleanDocType}_${cleanNumber}.pdf`, { type: "application/pdf" });
+        objectUrl = URL.createObjectURL(pdfFile);
         setPdfPreviewUrl(objectUrl);
       })
       .catch((error) => {
@@ -251,7 +254,7 @@ export default function FacturaDetalle() {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [invoice, invoicePdfPayload, pdfPreviewVersion]);
+  }, [documentLabel, invoice, invoicePdfPayload, pdfPreviewVersion]);
 
   const setSelectedPaymentEvidence = (file: File | null) => {
     setPaymentEvidence(file);
@@ -291,7 +294,8 @@ export default function FacturaDetalle() {
   const handleDownloadPdf = async () => {
     try {
       const cleanNumber = (invoice.number || "sin-numero").replace(/[/\\:*?"<>|\s]+/g, "-");
-      await downloadInvoicePdf(invoicePdfPayload, `${documentLabel}_${cleanNumber}`);
+      const cleanDocType = (documentLabel || "Factura").replace(/\s+/g, "_");
+      await downloadInvoicePdf(invoicePdfPayload, `${cleanDocType}_${cleanNumber}.pdf`);
     } catch (error) {
       toast({ title: "No se pudo generar el PDF", description: getErrorMessage(error), variant: "destructive" });
     }
@@ -676,7 +680,6 @@ export default function FacturaDetalle() {
                 href={pdfPreviewUrl}
                 target="_blank"
                 rel="noreferrer"
-                download={`${documentLabel}_${(invoice.number || "documento").replace(/[/\\:*?"<>|\s]+/g, "-")}.pdf`}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
               >
                 <ExternalLink className="h-4 w-4" />

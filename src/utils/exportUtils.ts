@@ -135,14 +135,24 @@ async function loadPdfTools() {
 }
 
 function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
+  const file = blob instanceof File ? blob : new File([blob], filename, { type: blob.type || "application/octet-stream" });
+  const url = URL.createObjectURL(file);
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
+  link.rel = "noopener";
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    try {
+      if (document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+      URL.revokeObjectURL(url);
+    } catch {
+      // ignore
+    }
+  }, 40_000);
 }
 
 function today() {
@@ -1047,8 +1057,14 @@ export async function generateInvoicePdfBlob(payload: InvoicePdfPayload) {
 }
 
 export async function downloadInvoicePdf(payload: InvoicePdfPayload, filename: string) {
-  const blob = await generateInvoicePdfBlob(payload);
-  downloadBlob(blob, filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
+  const doc = await buildInvoicePdfDocument(payload);
+  const cleanFilename = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
+  try {
+    doc.save(cleanFilename);
+  } catch {
+    const blob = doc.output("blob");
+    downloadBlob(blob, cleanFilename);
+  }
 }
 
 function mapInvoices(invoices: InvoiceExport[]) {
