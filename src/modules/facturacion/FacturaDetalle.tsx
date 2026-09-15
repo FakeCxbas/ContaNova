@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState, type ClipboardEvent } from "react";
+import { useEffect, useMemo, useState, type ClipboardEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Activity,
@@ -147,7 +147,7 @@ export default function FacturaDetalle() {
       : []
   ), [invoice?.sri_messages]);
   const sriStatusLabel = invoice?.sri_status
-    ? invoice.sri_status.replaceAll("_", " ")
+    ? invoice.sri_status.replace(/_/g, " ")
     : "Sin emitir";
   const sriStatusClass = invoice?.sri_status === "autorizada"
     ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400"

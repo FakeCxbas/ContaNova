@@ -72,6 +72,7 @@ interface ManagedCompany {
 type ApiResponse = {
   users?: ManagedUser[];
   companies?: ManagedCompany[];
+  company?: { id: string; name?: string };
   credentials?: { email: string; password: string };
   error?: string;
   message?: string;

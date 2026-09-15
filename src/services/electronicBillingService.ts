@@ -29,7 +29,7 @@ export type StoredElectronicDocument = {
 
 const STORAGE_PREFIX = "contanova:e-doc:";
 
-const DOC_CODES: Record<DocumentType, string> = {
+const DOC_CODES: Partial<Record<DocumentType, string>> = {
   factura: "01",
   nota_credito: "04",
   nota_debito: "05",

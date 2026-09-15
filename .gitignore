@@ -17,5 +17,4 @@ tmp/
 .vercel
 public/ads/
 public/brand/
-
-
+*.tsbuildinfo

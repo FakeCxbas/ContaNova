@@ -4,6 +4,7 @@ import { es } from "date-fns/locale";
 import { Activity, ArrowRight, CheckCircle, Clock, DollarSign, FileText, ShoppingBag, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { InvoiceStatusBadge } from "@/components/status/InvoiceStatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";

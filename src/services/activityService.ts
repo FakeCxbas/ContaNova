@@ -12,7 +12,8 @@ export type ActivityAction =
   | "eliminar_cliente"
   | "registrar_pago"
   | "crear_producto"
-  | "editar_producto";
+  | "editar_producto"
+  | "actualizar_firma_sri";
 
 export type EntityType = "factura" | "cliente" | "pago" | "producto" | "empresa";
 
@@ -29,6 +30,7 @@ const ACTION_LABELS: Record<ActivityAction, string> = {
   registrar_pago: "Registro un pago",
   crear_producto: "Creo un producto",
   editar_producto: "Edito un producto",
+  actualizar_firma_sri: "Actualizo la firma electronica SRI",
 };
 
 export const activityService = {

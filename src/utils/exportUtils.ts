@@ -589,7 +589,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
     doc.setTextColor(...softText);
     const companyContact = [payload.company.email, payload.company.phone, payload.company.address].filter(Boolean).join(" · ");
     if (companyContact) {
-      doc.text(doc.splitTextToSize(companyContact, 120).slice(0, 1), 19, 56);
+      doc.text(doc.splitTextToSize(companyContact, 120)[0] || "", 19, 56);
     }
 
     doc.setTextColor(...softText);
@@ -715,12 +715,12 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
   } else {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text(doc.splitTextToSize(payload.company.name || "Empresa", 50), 58, 41, { align: "center" } as never);
+    doc.text((doc.splitTextToSize(payload.company.name || "Empresa", 50) as string[]).join("\n"), 58, 41, { align: "center" } as never);
   }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.text(doc.splitTextToSize(payload.company.name || "Empresa", 76).slice(0, 1), 58, 62, { align: "center" } as never);
+  doc.text(doc.splitTextToSize(payload.company.name || "Empresa", 76)[0] || "", 58, 62, { align: "center" } as never);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.8);
   doc.setTextColor(...softText);
@@ -739,7 +739,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
     payload.company.email || "",
   ].filter(Boolean);
   companyLines.forEach((line, index) => {
-    doc.text(doc.splitTextToSize(line, 76).slice(0, 1), 19, 78 + index * 5);
+    doc.text(doc.splitTextToSize(line, 76)[0] || "", 19, 78 + index * 5);
   });
 
   doc.setFillColor(255, 255, 255);
@@ -760,7 +760,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
   doc.text("NUMERO DE AUTORIZACION", 112, 43);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.2);
-  doc.text(doc.splitTextToSize(groupedAuthorizationNumber || pendingLabel, 79), 112, 48);
+  doc.text((doc.splitTextToSize(groupedAuthorizationNumber || pendingLabel, 79) as string[]).join("\n"), 112, 48);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
   doc.text(`AMBIENTE: ${environment}`, 112, 58);
@@ -799,7 +799,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
     doc.text(label, 18, y);
     doc.setTextColor(...darkText);
     doc.setFont("helvetica", "bold");
-    doc.text(doc.splitTextToSize(value, 86).slice(0, 1), 42, y);
+    doc.text(doc.splitTextToSize(value, 86)[0] || "", 42, y);
   });
   const contactRows = [
     ["Email", payload.client.email || "-"],
@@ -812,7 +812,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
     doc.text(label, 118, y);
     doc.setTextColor(...darkText);
     doc.setFont("helvetica", "bold");
-    doc.text(doc.splitTextToSize(value, 54).slice(0, 1), 138, y);
+    doc.text(doc.splitTextToSize(value, 54)[0] || "", 138, y);
   });
 
   doc.setTextColor(...softText);
