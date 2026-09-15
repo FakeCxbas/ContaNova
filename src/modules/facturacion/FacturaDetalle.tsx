@@ -473,17 +473,24 @@ export default function FacturaDetalle() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="ghost" onClick={() => navigate("/app/facturacion")} className="w-full justify-start gap-2 sm:w-auto">
-          <ArrowLeft className="h-4 w-4" />Volver a facturacion
+    <div className="mx-auto max-w-5xl xl:max-w-6xl space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/app/facturacion")}
+          className="-ml-2 w-fit gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver a facturacion
         </Button>
-        <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {invoice.status !== "anulada" && (
             <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="w-full gap-2 sm:w-auto">
-                  <Mail className="h-4 w-4" />Enviar por correo
+                <Button variant="outline" className="gap-2">
+                  <Mail className="h-4 w-4" />
+                  Enviar por correo
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -518,10 +525,30 @@ export default function FacturaDetalle() {
             </Dialog>
           )}
 
+          <Button variant="outline" className="gap-2" onClick={handleDownloadPdf}>
+            <Download className="h-4 w-4" />
+            Descargar PDF
+          </Button>
+
+          <Button variant="outline" className="gap-2" onClick={() => window.print()}>
+            <Printer className="h-4 w-4" />
+            Imprimir
+          </Button>
+
+          {invoice.status !== "anulada" && usesSri && documentType === "factura" && (
+            <Button variant="outline" className="gap-2" onClick={handleEmitSri} disabled={emittingSri}>
+              {emittingSri ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+              {emittingSri ? "Enviando..." : "Enviar al SRI"}
+            </Button>
+          )}
+
           {invoice.status !== "anulada" && balance > 0 && (
             <Dialog open={showPaymentForm} onOpenChange={setShowPaymentForm}>
               <DialogTrigger asChild>
-                <Button className="w-full gap-2 sm:w-auto"><Plus className="h-4 w-4" />Registrar pago</Button>
+                <Button className="gap-2 shadow-sm">
+                  <Plus className="h-4 w-4" />
+                  Registrar pago
+                </Button>
               </DialogTrigger>
               <DialogContent className="max-w-3xl overflow-x-hidden">
                 <DialogHeader>
@@ -637,20 +664,6 @@ export default function FacturaDetalle() {
               </DialogContent>
             </Dialog>
           )}
-
-          {invoice.status !== "anulada" && usesSri && documentType === "factura" && (
-            <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={handleEmitSri} disabled={emittingSri}>
-              {emittingSri ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
-              {emittingSri ? "Enviando..." : "Enviar al SRI"}
-            </Button>
-          )}
-
-          <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={handleDownloadPdf}>
-            <Download className="h-4 w-4" />PDF
-          </Button>
-          <Button variant="outline" className="w-full gap-2 sm:w-auto" onClick={() => window.print()}>
-            <Printer className="h-4 w-4" />Imprimir
-          </Button>
         </div>
       </div>
 
