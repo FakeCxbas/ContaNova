@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { useLocation } from "react-router-dom";
 import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
@@ -31,12 +30,10 @@ function normalizeRole(value: unknown): AppRole {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [loading, setLoading] = useState(true);
-  const shouldSyncAuth = location.pathname.startsWith("/app");
 
   const fetchRole = useCallback(async (userId: string) => {
     try {
@@ -84,38 +81,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    await Promise.all([
-      fetchRole(sessionUser.id),
-      fetchPasswordStatus(sessionUser.id),
-    ]);
-    setLoading(false);
+    try {
+      await Promise.all([
+        fetchRole(sessionUser.id),
+        fetchPasswordStatus(sessionUser.id),
+      ]);
+    } catch (error) {
+      console.error("Fallo inesperado sincronizando datos de usuario", error);
+    } finally {
+      setLoading(false);
+    }
   }, [fetchPasswordStatus, fetchRole]);
 
   const refreshAuthState = useCallback(async () => {
-    if (!shouldSyncAuth || !isSupabaseConfigured) {
+    if (!isSupabaseConfigured) {
       await syncSession(null);
       return;
     }
 
+    setLoading(true);
     const {
       data: { session },
     } = await supabase.auth.getSession();
     await syncSession(session?.user ?? null);
-  }, [shouldSyncAuth, syncSession]);
+  }, [syncSession]);
 
   useEffect(() => {
-    if (!shouldSyncAuth) {
-      void syncSession(null);
-      return;
-    }
-
     if (!isSupabaseConfigured) {
       void syncSession(null);
       return;
     }
 
-    void refreshAuthState();
+    // Check existing active session on mount
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      void syncSession(session?.user ?? null);
+    });
 
+    // Listen to all authentication state events (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, etc.)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -123,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [refreshAuthState, shouldSyncAuth, syncSession]);
+  }, [syncSession]);
 
   const signOut = async () => {
     if (!isSupabaseConfigured) {

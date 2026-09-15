@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FieldError } from "@/components/ui/field-error";
 import { BrandLogo } from "@/components/branding/BrandMark";
-import { clearSupabaseAuthStorage, isSupabaseConfigured, supabase, supabaseConfigError } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase, supabaseConfigError } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthErrorMessage } from "@/lib/auth-errors";
 import { loginSchema, validateForm, type FieldErrors } from "@/lib/validations";
@@ -20,6 +21,14 @@ const Login = () => {
   const [formError, setFormError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading, refreshAuthState } = useAuth();
+
+  // Si el usuario ya cuenta con una sesion activa, redirigir directo al dashboard
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/app", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const handleResendConfirmation = async () => {
     if (!isSupabaseConfigured) {
@@ -85,7 +94,6 @@ const Login = () => {
 
     try {
       setLoading(true);
-      clearSupabaseAuthStorage();
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: validation.data.email,
@@ -109,6 +117,8 @@ const Login = () => {
         return;
       }
 
+      // Sincronizar el contexto de autenticacion para asegurar rol y usuario antes de navegar a la app protegida
+      await refreshAuthState();
       navigate("/app", { replace: true });
     } catch (error) {
       const message = getAuthErrorMessage(error, "No se pudo iniciar sesion. Intenta de nuevo.");
@@ -124,19 +134,23 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background relative flex items-center justify-center px-4 overflow-hidden">
+      {/* Glow decorativo de fondo */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-blue-600/15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 right-1/4 h-80 w-80 rounded-full bg-indigo-600/10 blur-3xl" />
+
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex">
+          <Link to="/" className="inline-flex transition-transform hover:scale-105 duration-200">
             <BrandLogo className="justify-center" />
           </Link>
-          <h1 className="text-2xl font-bold text-foreground mt-6 mb-2">Iniciar sesion</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground mt-6 mb-2">Iniciar sesion</h1>
           <p className="text-muted-foreground text-sm">
             Ingresa a tu cuenta para gestionar tu facturacion
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-8 shadow-card space-y-5">
+        <form onSubmit={handleSubmit} className="bg-card/90 backdrop-blur-xl border border-border/80 rounded-2xl p-8 shadow-2xl shadow-blue-500/5 space-y-5">
           {!isSupabaseConfigured && (
             <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {supabaseConfigError}
