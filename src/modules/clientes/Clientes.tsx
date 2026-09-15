@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Eye, MoreHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -100,10 +100,12 @@ export default function Clientes() {
     );
   }
 
-  const filteredClients = clients.filter(c => {
+  const filteredClients = useMemo(() => {
     const q = search.toLowerCase();
-    return !q || c.name.toLowerCase().includes(q) || c.identification.includes(q);
-  });
+    return clients.filter(
+      (c) => !q || c.name.toLowerCase().includes(q) || c.identification.includes(q),
+    );
+  }, [clients, search]);
 
   return (
     <div className="space-y-6">

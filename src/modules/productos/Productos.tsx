@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, AlertTriangle, Package, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,8 +31,16 @@ export default function Productos() {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
 
-  const lowStockProducts = products.filter(
-    (product) => product.type === "Bien" && product.active && product.stock <= product.min_stock && product.min_stock > 0,
+  const lowStockProducts = useMemo(
+    () =>
+      products.filter(
+        (product) =>
+          product.type === "Bien" &&
+          product.active &&
+          product.stock <= product.min_stock &&
+          product.min_stock > 0,
+      ),
+    [products],
   );
 
   const restockTarget = useMemo(

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { activityService, type EntityType } from "./activityService";
 import { useCompanyId } from "./companies";
 
@@ -9,11 +9,9 @@ export function useRecentActivity(limit = 20) {
     queryKey: ["activity_logs", companyId, limit],
     queryFn: () => activityService.getRecent(companyId!, limit),
     enabled: !!companyId,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     staleTime: 30_000,
-    structuralSharing: (oldData, newData) =>
-      oldData && oldData.length > 0 && newData.length === 0 ? oldData : newData,
   });
 }
 
@@ -24,10 +22,8 @@ export function useEntityActivity(entityType: EntityType, entityId: string | und
     queryKey: ["activity_logs", companyId, entityType, entityId, limit],
     queryFn: () => activityService.getByEntity(companyId!, entityType, entityId!, limit),
     enabled: !!companyId && !!entityId,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     staleTime: 30_000,
-    structuralSharing: (oldData, newData) =>
-      oldData && oldData.length > 0 && newData.length === 0 ? oldData : newData,
   });
 }

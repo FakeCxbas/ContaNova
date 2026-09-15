@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { paymentService, PaymentInput } from "./paymentService";
 import { useCompanyId } from "./companies";
 import { activityService } from "./activityService";
@@ -10,11 +10,9 @@ export function usePayments(invoiceId?: string) {
     queryKey: ["payments", companyId, invoiceId],
     queryFn: () => paymentService.getAll(companyId!, invoiceId),
     enabled: !!companyId,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
     staleTime: 30_000,
-    structuralSharing: (oldData, newData) =>
-      oldData && oldData.length > 0 && newData.length === 0 ? oldData : newData,
   });
 }
 

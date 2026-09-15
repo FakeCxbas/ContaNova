@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle,
@@ -739,27 +739,39 @@ export default function Facturacion() {
     );
   }
 
-  const uniqueClients = [...new Set(invoices.map((invoice) => invoice.client_name))];
-  const filteredInvoices = invoices.filter((invoice) => {
-    if (searchNumber && !invoice.number.toLowerCase().includes(searchNumber.toLowerCase())) return false;
-    if (filterClient !== "all" && invoice.client_name !== filterClient) return false;
-    if (filterDocType !== "all" && invoice.document_type !== filterDocType) return false;
-    if (filterDateFrom && invoice.date < filterDateFrom) return false;
-    if (filterDateTo && invoice.date > filterDateTo) return false;
-    return true;
-  });
+  const uniqueClients = useMemo(
+    () => [...new Set(invoices.map((invoice) => invoice.client_name))],
+    [invoices],
+  );
 
-  const exportData = filteredInvoices.map((invoice) => ({
-    date: invoice.date,
-    client: invoice.client_name,
-    number: invoice.number,
-    type: DOCUMENT_TYPES[invoice.document_type as DocumentType]?.label || "Factura",
-    subtotal: Number(invoice.subtotal),
-    iva: Number(invoice.iva),
-    total: Number(invoice.total),
-    status: getInvoiceStatusMeta(invoice.status).label,
-    delivery: getInvoiceDeliveryStatusMeta(invoice.delivery_status).label,
-  }));
+  const filteredInvoices = useMemo(
+    () =>
+      invoices.filter((invoice) => {
+        if (searchNumber && !invoice.number.toLowerCase().includes(searchNumber.toLowerCase())) return false;
+        if (filterClient !== "all" && invoice.client_name !== filterClient) return false;
+        if (filterDocType !== "all" && invoice.document_type !== filterDocType) return false;
+        if (filterDateFrom && invoice.date < filterDateFrom) return false;
+        if (filterDateTo && invoice.date > filterDateTo) return false;
+        return true;
+      }),
+    [invoices, searchNumber, filterClient, filterDocType, filterDateFrom, filterDateTo],
+  );
+
+  const exportData = useMemo(
+    () =>
+      filteredInvoices.map((invoice) => ({
+        date: invoice.date,
+        client: invoice.client_name,
+        number: invoice.number,
+        type: DOCUMENT_TYPES[invoice.document_type as DocumentType]?.label || "Factura",
+        subtotal: Number(invoice.subtotal),
+        iva: Number(invoice.iva),
+        total: Number(invoice.total),
+        status: getInvoiceStatusMeta(invoice.status).label,
+        delivery: getInvoiceDeliveryStatusMeta(invoice.delivery_status).label,
+      })),
+    [filteredInvoices],
+  );
 
   return (
     <div className="space-y-6">

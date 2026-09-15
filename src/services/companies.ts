@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { companyService, CompanyUpdate } from "./companyService";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -8,9 +8,9 @@ export function useCompanyId() {
     queryKey: ["company_id", user?.id],
     queryFn: () => companyService.getCompanyId(user!.id),
     enabled: !!user,
-    placeholderData: (previousData) => previousData,
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
-    retry: 3,
+    retry: 1,
     staleTime: 60_000,
   });
 }
@@ -21,6 +21,9 @@ export function useCompany() {
     queryKey: ["company", companyId],
     queryFn: () => companyService.getById(companyId!),
     enabled: !!companyId,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+    staleTime: 60_000,
   });
 }
 
@@ -31,3 +34,4 @@ export function useUpdateCompany() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["company"] }),
   });
 }
+export type { CompanyUpdate };

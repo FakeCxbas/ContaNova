@@ -1,9 +1,10 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { DashboardTopbar } from "./DashboardTopbar";
+import { Outlet } from "react-router-dom";
 
 interface DashboardLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -14,7 +15,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex-1 flex flex-col min-w-0">
           <DashboardTopbar />
           <main className="flex-1 p-4 md:p-6 overflow-auto">
-            {children}
+            {children ?? <Outlet />}
           </main>
         </div>
       </div>

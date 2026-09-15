@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ShieldCheck, UserCog, KeyRound } from "lucide-react";
 import { Link } from "react-router-dom";
-import dashboardMockup from "@/assets/dashboard-mockup.png";
+import dashboardMockup from "@/assets/dashboard-mockup.webp";
 
 const HeroSection = () => {
   return (
@@ -59,7 +59,11 @@ const HeroSection = () => {
               src={dashboardMockup}
               alt="ContaNova - Dashboard de facturacion electronica"
               className="w-full h-auto"
-              loading="lazy"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              width={1200}
+              height={750}
             />
           </div>
         </div>

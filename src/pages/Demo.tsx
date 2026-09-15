@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import dashboardMockup from "@/assets/dashboard-mockup.png";
+import dashboardMockup from "@/assets/dashboard-mockup.webp";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 
@@ -27,6 +27,10 @@ const Demo = () => {
                 src={dashboardMockup}
                 alt="ContaNova - Dashboard de facturación electrónica"
                 className="w-full h-auto"
+                loading="eager"
+                decoding="async"
+                width={1200}
+                height={750}
               />
             </div>
           </div>

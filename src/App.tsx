@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { DashboardLayout }  from "@/components/dashboard/DashboardLayout";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { ProtectedRoute } from "@/components/dashboard/ProtectedRoute";
 
 const Index = lazy(() => import("./pages/Index"));
@@ -26,7 +26,16 @@ const Productos = lazy(() => import("./modules/productos/Productos"));
 const Reportes = lazy(() => import("./modules/reportes/Reportes"));
 const Configuracion = lazy(() => import("./modules/configuracion/Configuracion"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 15,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -44,24 +53,82 @@ const App = () => (
           <AuthProvider>
             <Suspense fallback={<RouteFallback />}>
               <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/demo" element={<Demo />} />
-              <Route path="/funciones" element={<Funciones />} />
-              <Route path="/precios" element={<Precios />} />
-              <Route path="/contacto" element={<Contact />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/demo" element={<Demo />} />
+                <Route path="/funciones" element={<Funciones />} />
+                <Route path="/precios" element={<Precios />} />
+                <Route path="/contacto" element={<Contact />} />
 
-              <Route path="/app" element={<ProtectedRoute module="dashboard"><DashboardLayout><DashboardHome /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/app/facturacion" element={<ProtectedRoute module="facturacion"><DashboardLayout><Facturacion /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/app/facturacion/:id" element={<ProtectedRoute module="facturacion"><DashboardLayout><FacturaDetalle /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/app/clientes" element={<ProtectedRoute module="clientes"><DashboardLayout><Clientes /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/app/clientes/:id" element={<ProtectedRoute module="clientes"><DashboardLayout><ClienteDetalle /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/app/productos" element={<ProtectedRoute module="productos"><DashboardLayout><Productos /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/app/reportes" element={<ProtectedRoute module="reportes"><DashboardLayout><Reportes /></DashboardLayout></ProtectedRoute>} />
-              <Route path="/app/configuracion" element={<ProtectedRoute module="configuracion"><DashboardLayout><Configuracion /></DashboardLayout></ProtectedRoute>} />
+                <Route
+                  path="/app"
+                  element={
+                    <ProtectedRoute module="dashboard">
+                      <DashboardLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<DashboardHome />} />
+                  <Route
+                    path="facturacion"
+                    element={
+                      <ProtectedRoute module="facturacion">
+                        <Facturacion />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="facturacion/:id"
+                    element={
+                      <ProtectedRoute module="facturacion">
+                        <FacturaDetalle />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="clientes"
+                    element={
+                      <ProtectedRoute module="clientes">
+                        <Clientes />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="clientes/:id"
+                    element={
+                      <ProtectedRoute module="clientes">
+                        <ClienteDetalle />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="productos"
+                    element={
+                      <ProtectedRoute module="productos">
+                        <Productos />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="reportes"
+                    element={
+                      <ProtectedRoute module="reportes">
+                        <Reportes />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="configuracion"
+                    element={
+                      <ProtectedRoute module="configuracion">
+                        <Configuracion />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
           </AuthProvider>
