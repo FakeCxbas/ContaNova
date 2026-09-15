@@ -315,10 +315,14 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
     creator: "ContaNova",
   });
 
-  const primaryBlue = [37, 99, 235] as const;
-  const darkText = [15, 23, 42] as const;
-  const softText = [100, 116, 139] as const;
-  const borderGrey = [203, 213, 225] as const;
+  // Paleta de color premium ContaNova
+  const primaryBlue = [37, 99, 235] as const;      // Azul royal corporativo
+  const darkText = [15, 23, 42] as const;          // Slate 900
+  const softText = [100, 116, 139] as const;       // Slate 500
+  const lightFill = [248, 250, 252] as const;      // Slate 50
+  const borderGrey = [218, 226, 235] as const;     // Borde sutil
+  const greenText = [16, 149, 106] as const;       // Verde esmeralda para estados autorizados/pagados
+  const amberText = [217, 119, 6] as const;        // Ambar para estados pendientes
 
   const accessKey = payload.invoice.sriAccessKey || "";
   const authorizationNumber = payload.invoice.sriAuthorizationNumber || accessKey || "";
@@ -328,6 +332,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
   const formattedAuthorizationDate = formatAuthorizationDate(payload.invoice.sriAuthorizedAt);
   const documentNumber = sriSequence(payload.invoice.number);
   const environment = (payload.invoice.sriEnvironment || "").toLowerCase().includes("prod") ? "PRODUCCION" : "PRUEBAS";
+  const authorizedLabel = sriStatusLabel(payload);
 
   const drawAccessKeyBars = (value: string, x: number, y: number, width: number, height: number) => {
     if (!value) {
@@ -341,7 +346,7 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
     const bars = value.split("").map((char, index) => {
       const numeric = Number(char);
       return {
-        bar: 0.42 + ((Number.isNaN(numeric) ? char.charCodeAt(0) : numeric) % 3) * 0.16,
+        bar: 0.40 + ((Number.isNaN(numeric) ? char.charCodeAt(0) : numeric) % 3) * 0.16,
         space: index % 4 === 0 ? 0.28 : 0.18,
       };
     });
@@ -361,365 +366,400 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
 
   const logo = await loadImageForPdf(payload.company.logoUrl);
 
-  // -------------------------------------------------------------
-  // 1. CUADRANTE SUPERIOR IZQUIERDO: EMISOR (x: 14, y: 14, w: 90, h: 76)
-  // -------------------------------------------------------------
-  doc.setFillColor(255, 255, 255);
+  // =============================================================
+  // 1. TARJETA SUPERIOR IZQUIERDA: EMISOR (x: 14, y: 14, w: 88, h: 74)
+  // =============================================================
+  doc.setFillColor(...lightFill);
+  doc.roundedRect(14, 14, 88, 74, 3.5, 3.5, "F");
   doc.setDrawColor(...borderGrey);
-  doc.setLineWidth(0.25);
-  doc.roundedRect(14, 14, 90, 76, 2.5, 2.5, "FD");
+  doc.setLineWidth(0.3);
+  doc.roundedRect(14, 14, 88, 74, 3.5, 3.5, "S");
 
-  let emisorContentY = 43;
+  // Banner superior azul EMISOR con esquinas superiores redondeadas
+  doc.setFillColor(...primaryBlue);
+  doc.roundedRect(14, 14, 88, 13, 3.5, 3.5, "F");
+  doc.rect(14, 22, 88, 5, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("EMISOR", 19, 23);
+
+  // Contenedor para logotipo o avatar de empresa
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(26, 29, 64, 25, 2.5, 2.5, "F");
+  doc.setDrawColor(235, 240, 246);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(26, 29, 64, 25, 2.5, 2.5, "S");
+
   if (logo) {
-    const maxLogoW = 58;
-    const maxLogoH = 22;
-    const ratio = Math.min(maxLogoW / logo.width, maxLogoH / logo.height);
+    const logoBox = { x: 28, y: 30, width: 60, height: 23 };
+    const maxW = logoBox.width - 4;
+    const maxH = logoBox.height - 4;
+    const ratio = Math.min(maxW / logo.width, maxH / logo.height);
     const logoW = logo.width * ratio;
     const logoH = logo.height * ratio;
-    const logoX = 14 + (90 - logoW) / 2;
-    const logoY = 17 + (22 - logoH) / 2;
+    const logoX = logoBox.x + (logoBox.width - logoW) / 2;
+    const logoY = logoBox.y + (logoBox.height - logoH) / 2;
     doc.addImage(logo.dataUrl, logo.format, logoX, logoY, logoW, logoH);
-    emisorContentY = 43;
   } else {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
     doc.setTextColor(...primaryBlue);
-    const companyTitleLines = doc.splitTextToSize(payload.company.name || "EMPRESA EMISORA", 82);
-    companyTitleLines.slice(0, 2).forEach((line: string, idx: number) => {
-      doc.text(line, 59, 24 + idx * 5, { align: "center" } as never);
+    const compLines = doc.splitTextToSize(payload.company.name || "ContaNova", 56) as string[];
+    compLines.slice(0, 2).forEach((line, idx) => {
+      doc.text(line, 58, 40 + idx * 4.5, { align: "center" } as never);
     });
-    emisorContentY = 38;
   }
 
-  // Nombre y datos fiscales del emisor
-  doc.setTextColor(...darkText);
+  // Nombre comercial / Razón social
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  const emisorName = (doc.splitTextToSize(payload.company.name || "Empresa", 82) as string[])[0] || "";
-  doc.text(emisorName, 59, emisorContentY, { align: "center" } as never);
+  doc.setFontSize(8.5);
+  doc.setTextColor(...darkText);
+  const emisorDisplayName = (doc.splitTextToSize(payload.company.name || "Empresa", 80) as string[])[0] || "";
+  doc.text(emisorDisplayName, 58, 58, { align: "center" } as never);
 
-  doc.setDrawColor(226, 232, 240);
-  doc.line(18, emisorContentY + 3, 100, emisorContentY + 3);
+  doc.setDrawColor(...borderGrey);
+  doc.line(19, 61, 97, 61);
 
+  // Datos fiscales del emisor
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.8);
   doc.setTextColor(...softText);
+  doc.text("RUC", 19, 66);
+  doc.text("TELF", 58, 66);
 
-  let cursorY = emisorContentY + 8;
-  const emisorAddress = payload.company.address || "Matriz: Ecuador";
+  doc.setTextColor(...darkText);
   doc.setFont("helvetica", "bold");
-  doc.text("Direccion Matriz:", 18, cursorY);
+  doc.text(payload.company.ruc || "-", 27, 66);
+  doc.text(payload.company.phone || "-", 67, 66);
+
   doc.setFont("helvetica", "normal");
-  const addressLines = (doc.splitTextToSize(emisorAddress, 54) as string[]).slice(0, 2);
-  addressLines.forEach((line: string, idx: number) => {
-    doc.text(line, 44, cursorY + idx * 3.5);
+  doc.setFontSize(6.5);
+  doc.setTextColor(...softText);
+  const emisorAddressStr = payload.company.address || "Matriz: Ecuador";
+  const emisorLines = [
+    (doc.splitTextToSize(`Matriz: ${emisorAddressStr}`, 78) as string[])[0] || "",
+    payload.company.email ? `Email: ${payload.company.email}` : "",
+  ].filter(Boolean);
+
+  emisorLines.forEach((line, index) => {
+    doc.text(line, 19, 72 + index * 4.2);
   });
-  cursorY += Math.max(7, addressLines.length * 3.5 + 3);
 
-  const establishment = payload.company.establishment
-    ? `Establ. ${payload.company.establishment}${payload.company.emissionPoint ? " - Pto. " + payload.company.emissionPoint : ""}`
-    : null;
-  if (establishment) {
-    doc.setFont("helvetica", "bold");
-    doc.text("Direccion Sucursal:", 18, cursorY);
-    doc.setFont("helvetica", "normal");
-    doc.text(establishment, 44, cursorY);
-    cursorY += 4;
-  }
+  doc.setFontSize(6.2);
+  doc.text(`Obligado a Contabilidad: ${payload.company.accountingRequired ? "SI" : "NO"}  ·  RIMPE`, 19, 81.5);
 
-  doc.setFont("helvetica", "bold");
-  doc.text("Obligado a llevar contabilidad:", 18, cursorY);
-  doc.setFont("helvetica", "normal");
-  doc.text(payload.company.accountingRequired ? "SI" : "NO", 62, cursorY);
-  cursorY += 4;
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Regimen:", 18, cursorY);
-  doc.setFont("helvetica", "normal");
-  doc.text("CONTRIBUYENTE REGIMEN RIMPE", 34, cursorY);
-  cursorY += 4;
-
-  const contactText = [
-    payload.company.phone ? `Telf: ${payload.company.phone}` : null,
-    payload.company.email ? payload.company.email : null,
-  ].filter(Boolean).join(" · ");
-  if (contactText) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.2);
-    doc.text((doc.splitTextToSize(contactText, 82) as string[])[0] || "", 59, cursorY, { align: "center" } as never);
-  }
-
-  // -------------------------------------------------------------
-  // 2. CUADRANTE SUPERIOR DERECHO: SRI RIDE (x: 106, y: 14, w: 90, h: 76)
-  // -------------------------------------------------------------
+  // =============================================================
+  // 2. TARJETA SUPERIOR DERECHA: FACTURA / SRI (x: 108, y: 14, w: 88, h: 74)
+  // =============================================================
   doc.setFillColor(255, 255, 255);
+  doc.roundedRect(108, 14, 88, 74, 3.5, 3.5, "F");
   doc.setDrawColor(...borderGrey);
-  doc.setLineWidth(0.25);
-  doc.roundedRect(106, 14, 90, 76, 2.5, 2.5, "FD");
+  doc.setLineWidth(0.3);
+  doc.roundedRect(108, 14, 88, 74, 3.5, 3.5, "S");
 
-  doc.setTextColor(...darkText);
+  // Banner superior azul FACTURA
+  doc.setFillColor(...primaryBlue);
+  doc.roundedRect(108, 14, 88, 13, 3.5, 3.5, "F");
+  doc.rect(108, 22, 88, 5, "F");
+  doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10.5);
-  doc.text(`R.U.C.: ${payload.company.ruc || "-"}`, 110, 21);
+  doc.setFontSize(11);
+  doc.text((payload.invoice.type || "FACTURA").toUpperCase(), 113, 23);
+  doc.setFontSize(6.8);
+  doc.text("COMPROBANTE ELECTRONICO", 191, 23, { align: "right" } as never);
 
-  doc.setFontSize(12);
-  doc.setTextColor(...primaryBlue);
-  doc.text((payload.invoice.type || "FACTURA").toUpperCase(), 110, 27.5);
-
-  doc.setFontSize(9.5);
+  // Secuencial oficial
   doc.setTextColor(...darkText);
-  doc.text(`No. ${documentNumber}`, 110, 33);
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "bold");
+  doc.text(`No. ${documentNumber}`, 113, 33);
+
+  // Numero de Autorizacion
+  doc.setFontSize(6.5);
+  doc.setTextColor(...softText);
+  doc.text("NUMERO DE AUTORIZACION", 113, 39);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.2);
+  doc.setTextColor(...darkText);
+  const authLines = (doc.splitTextToSize(groupedAuthorizationNumber || pendingLabel, 80) as string[]).slice(0, 2);
+  authLines.forEach((line, index) => {
+    doc.text(line, 113, 43.5 + index * 3.5);
+  });
+
+  // Ambiente y Emision
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.2);
+  doc.text(`AMBIENTE: ${environment}`, 113, 53);
+  doc.text("EMISION: NORMAL", 154, 53);
+
+  // Fecha y hora
+  doc.text("FECHA Y HORA DE AUTORIZACION:", 113, 58.5);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.8);
+  doc.text(formattedAuthorizationDate || pendingLabel, 113, 63);
+
+  // Clave de acceso y codigo de barras
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(6.5);
+  doc.setTextColor(...softText);
+  doc.text("CLAVE DE ACCESO", 152, 68, { align: "center" } as never);
+
+  drawAccessKeyBars(accessKey, 113, 69.5, 78, 6.5);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(5.4);
+  doc.setTextColor(...darkText);
+  doc.text(groupedAccessKey || "PENDIENTE", 152, 79.5, { align: "center" } as never);
+
+  // =============================================================
+  // 3. TARJETA CLIENTE (x: 14, y: 91, w: 182, h: 29)
+  // =============================================================
+  doc.setFillColor(...lightFill);
+  doc.roundedRect(14, 91, 182, 29, 3, 3, "F");
+  doc.setDrawColor(...borderGrey);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(14, 91, 182, 29, 3, 3, "S");
+
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...primaryBlue);
+  doc.text("CLIENTE", 19, 98);
 
   doc.setDrawColor(226, 232, 240);
-  doc.line(110, 36, 192, 36);
+  doc.line(19, 100, 191, 100);
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(6.8);
-  doc.text("NUMERO DE AUTORIZACION:", 110, 41);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6);
-  const authNumberLines = (doc.splitTextToSize(authorizationNumber || pendingLabel, 82) as string[]).slice(0, 2);
-  authNumberLines.forEach((line: string, idx: number) => {
-    doc.text(line, 110, 45 + idx * 3.2);
+  // Columna Izquierda Cliente (x: 19)
+  const clientLeftRows = [
+    ["Cliente", payload.client.name || "-"],
+    [identificationLabel(payload.client.identification), payload.client.identification || "-"],
+    ["Direccion", payload.client.address || "-"],
+  ] as const;
+
+  clientLeftRows.forEach(([label, value], index) => {
+    const y = 106 + index * 5;
+    doc.setTextColor(...softText);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.text(label, 19, y);
+
+    doc.setTextColor(...darkText);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text((doc.splitTextToSize(value, 75) as string[])[0] || "", 40, y);
   });
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(6.8);
-  doc.text("FECHA Y HORA DE AUTORIZACION:", 110, 53);
-  doc.setFont("helvetica", "normal");
-  doc.text(formattedAuthorizationDate || pendingLabel, 110, 57);
+  // Columna Derecha Cliente (x: 118)
+  const clientRightRows = [
+    ["Email", payload.client.email || "-"],
+    ["Telefono", payload.client.phone || "-"],
+    ["Fecha Emision", payload.invoice.date || "-"],
+  ] as const;
 
-  doc.setFont("helvetica", "bold");
-  doc.text(`AMBIENTE: ${environment}`, 110, 62);
-  doc.text("EMISION: NORMAL", 154, 62);
-
-  doc.setFont("helvetica", "bold");
-  doc.text("CLAVE DE ACCESO", 151, 67, { align: "center" } as never);
-
-  // Codigo de barras a ancho completo
-  drawAccessKeyBars(accessKey, 110, 68.5, 82, 8);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(5.3);
-  doc.text(groupedAccessKey || "PENDIENTE", 151, 80, { align: "center" } as never);
-
-  // -------------------------------------------------------------
-  // 3. RECUADRO DE DATOS DEL CLIENTE / RECEPTOR (x: 14, y: 92, w: 182, h: 26)
-  // -------------------------------------------------------------
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(...borderGrey);
-  doc.setLineWidth(0.25);
-  doc.roundedRect(14, 92, 182, 26, 2.5, 2.5, "FD");
-
-  doc.setTextColor(...darkText);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.text("Razon Social / Nombres y Apellidos:", 18, 98);
-  doc.setFontSize(8.5);
-  const clientNameTrunc = (doc.splitTextToSize(payload.client.name || "Consumidor Final", 92) as string[])[0] || "";
-  doc.text(clientNameTrunc, 68, 98);
-
-  doc.setFontSize(7.5);
-  doc.text("Identificacion:", 140, 98);
-  doc.setFont("helvetica", "normal");
-  doc.text(payload.client.identification || "9999999999999", 162, 98);
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Fecha Emision:", 18, 105);
-  doc.setFont("helvetica", "normal");
-  doc.text(payload.invoice.date, 44, 105);
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Guia Remision:", 140, 105);
-  doc.setFont("helvetica", "normal");
-  doc.text("-", 162, 105);
-
-  doc.setFont("helvetica", "bold");
-  doc.text("Direccion:", 18, 112);
-  doc.setFont("helvetica", "normal");
-  const clientAddressTrunc = (doc.splitTextToSize(payload.client.address || "-", 75) as string[])[0] || "";
-  doc.text(clientAddressTrunc, 38, 112);
-
-  const contactClient = [
-    payload.client.phone ? `Telf: ${payload.client.phone}` : null,
-    payload.client.email ? payload.client.email : null,
-  ].filter(Boolean).join(" · ");
-  if (contactClient) {
+  clientRightRows.forEach(([label, value], index) => {
+    const y = 106 + index * 5;
+    doc.setTextColor(...softText);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
-    doc.text((doc.splitTextToSize(contactClient, 65) as string[])[0] || "", 120, 112);
-  }
+    doc.setFontSize(7.5);
+    doc.text(label, 118, y);
 
-  // -------------------------------------------------------------
-  // 4. TABLA DE ITEMS / PRODUCTOS
-  // -------------------------------------------------------------
-  const tableStartY = 121;
+    doc.setTextColor(...darkText);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text((doc.splitTextToSize(value, 52) as string[])[0] || "", 140, y);
+  });
+
+  // =============================================================
+  // 4. BARRA DE SEGUIMIENTO Y ESTADO (x: 14, y: 123, w: 182, h: 23)
+  // =============================================================
+  doc.setFillColor(...lightFill);
+  doc.roundedRect(14, 123, 182, 23, 3, 3, "F");
+  doc.setDrawColor(...borderGrey);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(14, 123, 182, 23, 3, 3, "S");
+
+  const statusCols = [
+    { label: "Fecha", value: payload.invoice.date, color: darkText, x: 20 },
+    { label: "Factura", value: payload.invoice.status || "Emitida", color: primaryBlue, x: 55 },
+    {
+      label: "Cobro",
+      value: payload.invoice.paymentStatus || "Pendiente",
+      color: (payload.invoice.paymentStatus || "").toLowerCase().includes("cobr") || (payload.invoice.paymentStatus || "").toLowerCase().includes("pag")
+        ? greenText
+        : amberText,
+      x: 93,
+    },
+    { label: "Entrega", value: payload.invoice.deliveryStatus || "Correo pendiente", color: darkText, x: 126 },
+    {
+      label: "SRI",
+      value: authorizedLabel,
+      color: authorizedLabel.toLowerCase().includes("autoriz") ? greenText : amberText,
+      x: 163,
+    },
+  ];
+
+  statusCols.forEach((col, idx) => {
+    doc.setTextColor(...softText);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.text(col.label, col.x, 131);
+
+    doc.setTextColor(col.color[0], col.color[1], col.color[2]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text((doc.splitTextToSize(col.value, 32) as string[])[0] || "", col.x, 138);
+
+    // Divisores verticales sutiles
+    if (idx < statusCols.length - 1) {
+      const divX = col.x + 31;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(divX, 127, divX, 142);
+    }
+  });
+
+  // =============================================================
+  // 5. TABLA DE ITEMS / PRODUCTOS
+  // =============================================================
+  const tableStartY = 152;
 
   autoTable(doc as never, {
-    head: [["Cod.", "Cant.", "Descripcion", "P. Unitario", "Descuento", "Precio Total"]],
-    body: payload.items.map((item, index) => [
-      String(index + 1).padStart(3, "0"),
-      String(item.quantity),
+    head: [["Producto", "Cant.", "P. Unit.", "IVA", "Subtotal"]],
+    body: payload.items.map((item) => [
       item.name,
+      String(item.quantity),
       formatCurrency(item.price),
-      "$0.00",
+      `${item.iva}%`,
       formatCurrency(item.subtotal),
     ]),
     startY: tableStartY,
     theme: "grid",
     styles: {
-      fontSize: 7.5,
-      cellPadding: 2.5,
+      fontSize: 8.5,
+      cellPadding: 3,
       textColor: darkText[0],
       lineColor: [226, 232, 240],
-      lineWidth: 0.15,
+      lineWidth: 0.2,
     },
     headStyles: {
-      fillColor: [241, 245, 249],
-      textColor: [15, 23, 42],
+      fillColor: [37, 99, 235],
+      textColor: 255,
       fontStyle: "bold",
-      lineWidth: 0.2,
-      lineColor: [203, 213, 225],
+      halign: "left",
     },
-    alternateRowStyles: { fillColor: [250, 250, 252] },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      0: { cellWidth: 14, halign: "center" },
-      1: { cellWidth: 16, halign: "center" },
-      2: { cellWidth: 86 },
-      3: { cellWidth: 22, halign: "right" },
-      4: { cellWidth: 18, halign: "right" },
-      5: { cellWidth: 26, halign: "right" },
+      0: { cellWidth: 88, halign: "left" },
+      1: { cellWidth: 18, halign: "center" },
+      2: { cellWidth: 26, halign: "right" },
+      3: { cellWidth: 18, halign: "center" },
+      4: { cellWidth: 32, halign: "right" },
     },
     tableWidth: 182,
     margin: { left: 14, right: 14 },
   });
 
-  // -------------------------------------------------------------
-  // 5. BLOQUE INFERIOR: FORMA DE PAGO + TOTALES OFICIALES SRI
-  // -------------------------------------------------------------
-  const summaryStartY = (doc.lastAutoTable?.finalY || 121) + 5;
+  // =============================================================
+  // 6. BLOQUE INFERIOR: INFORMACION / PAGO + TOTALES
+  // =============================================================
+  const summaryStartY = (doc.lastAutoTable?.finalY || 160) + 7;
 
-  // Calculo de subtotales desglosados
-  const itemsWithIva = payload.items.filter((item) => Number(item.iva) > 0);
-  const subtotalWithIva = itemsWithIva.reduce((sum, item) => sum + item.subtotal, 0);
-  const subtotalZeroIva = payload.items.filter((item) => Number(item.iva) === 0).reduce((sum, item) => sum + item.subtotal, 0);
-  const ivaPercentage = itemsWithIva.length > 0 ? itemsWithIva[0]?.iva || 15 : 15;
-
-  // Izquierda: Informacion Adicional (x: 14, w: 96)
-  doc.setFillColor(255, 255, 255);
+  // Izquierda: Forma de pago e informacion adicional
+  doc.setFillColor(...lightFill);
+  doc.roundedRect(14, summaryStartY, 98, 36, 3, 3, "F");
   doc.setDrawColor(...borderGrey);
-  doc.setLineWidth(0.25);
-  doc.roundedRect(14, summaryStartY, 96, 24, 2, 2, "FD");
+  doc.setLineWidth(0.3);
+  doc.roundedRect(14, summaryStartY, 98, 36, 3, 3, "S");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
-  doc.setTextColor(...darkText);
-  doc.text("Informacion Adicional:", 18, summaryStartY + 5);
+  doc.setTextColor(...primaryBlue);
+  doc.text("FORMA DE PAGO E INFORMACION ADICIONAL", 19, summaryStartY + 7);
+
+  doc.setDrawColor(226, 232, 240);
+  doc.line(19, summaryStartY + 9, 107, summaryStartY + 9);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(6.8);
   doc.setTextColor(...softText);
-  doc.text(`Email Cliente: ${payload.client.email || "-"}`, 18, summaryStartY + 10);
-  doc.text(`Telefono: ${payload.client.phone || "-"}`, 18, summaryStartY + 14);
-  doc.text(`Direccion: ${(doc.splitTextToSize(payload.client.address || "-", 88) as string[])[0] || "-"}`, 18, summaryStartY + 18);
-  doc.text(`Estado Pago: ${payload.invoice.paymentStatus || "Pendiente"}`, 18, summaryStartY + 22);
-
-  // Izquierda abajo: Forma de Pago Oficial SRI (x: 14, w: 96, h: 22)
-  const pagoStartY = summaryStartY + 27;
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(...borderGrey);
-  doc.roundedRect(14, pagoStartY, 96, 21, 2, 2, "FD");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.2);
-  doc.setTextColor(...darkText);
-  doc.text("Forma de Pago", 18, pagoStartY + 5);
-  doc.text("Total", 72, pagoStartY + 5);
-  doc.text("Plazo", 84, pagoStartY + 5);
-
-  doc.setDrawColor(226, 232, 240);
-  doc.line(16, pagoStartY + 7, 108, pagoStartY + 7);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.2);
-  doc.setTextColor(...softText);
-  const paymentMethodLabel = payload.invoice.paymentStatus?.toLowerCase().includes("transfer")
+  const paymentMethodText = payload.invoice.paymentStatus?.toLowerCase().includes("transfer")
     ? "20 - OTROS CON UTILIZACION DEL SISTEMA FINANCIERO"
     : "01 - SIN UTILIZACION DEL SISTEMA FINANCIERO";
-  doc.text((doc.splitTextToSize(paymentMethodLabel, 52) as string[])[0] || "", 18, pagoStartY + 12);
+  doc.text("Metodo de Pago:", 19, summaryStartY + 15);
   doc.setTextColor(...darkText);
   doc.setFont("helvetica", "bold");
-  doc.text(formatCurrency(payload.invoice.total), 72, pagoStartY + 12);
+  doc.text((doc.splitTextToSize(paymentMethodText, 60) as string[])[0] || "", 44, summaryStartY + 15);
+
   doc.setFont("helvetica", "normal");
-  doc.text("0 Dias", 84, pagoStartY + 12);
+  doc.setTextColor(...softText);
+  doc.text("Plazo:", 19, summaryStartY + 21);
+  doc.setTextColor(...darkText);
+  doc.text("0 Dias", 44, summaryStartY + 21);
 
-  // Derecha: Cuadro Oficial de Totales SRI (x: 114, w: 82, h: 48)
+  doc.setTextColor(...softText);
+  doc.text("Email envio:", 19, summaryStartY + 27);
+  doc.setTextColor(...darkText);
+  doc.text((doc.splitTextToSize(payload.client.email || "-", 60) as string[])[0] || "-", 44, summaryStartY + 27);
+
+  // Derecha: Cuadro de Totales
   doc.setFillColor(255, 255, 255);
+  doc.roundedRect(118, summaryStartY, 78, 36, 3, 3, "F");
   doc.setDrawColor(...borderGrey);
-  doc.setLineWidth(0.25);
-  doc.roundedRect(114, summaryStartY, 82, 48, 2, 2, "FD");
+  doc.setLineWidth(0.3);
+  doc.roundedRect(118, summaryStartY, 78, 36, 3, 3, "S");
 
-  const totalLines = [
-    [`SUBTOTAL ${ivaPercentage}%:`, formatCurrency(subtotalWithIva)],
-    ["SUBTOTAL 0%:", formatCurrency(subtotalZeroIva)],
-    ["SUBTOTAL NO OBJETO DE IVA:", "$0.00"],
-    ["SUBTOTAL EXENTO DE IVA:", "$0.00"],
-    ["SUBTOTAL SIN IMPUESTOS:", formatCurrency(payload.invoice.subtotal)],
-    ["TOTAL DESCUENTO:", "$0.00"],
-    [`IVA ${ivaPercentage}%:`, formatCurrency(payload.invoice.iva)],
-  ];
+  doc.setTextColor(...darkText);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.text("Subtotal", 124, summaryStartY + 8);
+  doc.text(formatCurrency(payload.invoice.subtotal), 189, summaryStartY + 8, { align: "right" } as never);
 
-  totalLines.forEach(([label, val], idx) => {
-    const yPos = summaryStartY + 5 + idx * 4.6;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.8);
-    doc.setTextColor(...darkText);
-    doc.text(label, 118, yPos);
-    doc.text(val, 192, yPos, { align: "right" } as never);
-    if (idx < totalLines.length - 1) {
-      doc.setDrawColor(241, 245, 249);
-      doc.line(116, yPos + 1.5, 194, yPos + 1.5);
-    }
-  });
+  doc.text("IVA", 124, summaryStartY + 15);
+  doc.text(formatCurrency(payload.invoice.iva), 189, summaryStartY + 15, { align: "right" } as never);
 
-  // Fila destacada de VALOR TOTAL
-  const finalTotalY = summaryStartY + 38;
-  doc.setFillColor(241, 245, 249);
-  doc.rect(114.5, finalTotalY, 81, 9.5, "F");
+  doc.setLineWidth(0.3);
   doc.setDrawColor(203, 213, 225);
-  doc.line(114, finalTotalY, 196, finalTotalY);
+  doc.line(124, summaryStartY + 18.5, 190, summaryStartY + 18.5);
+
+  // Fila destacada Total con fondo sutil
+  doc.setFillColor(...lightFill);
+  doc.roundedRect(119, summaryStartY + 20.5, 76, 13.5, 2, 2, "F");
+  doc.setDrawColor(...primaryBlue);
+  doc.setLineWidth(0.2);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
+  doc.setFontSize(9.5);
   doc.setTextColor(...darkText);
-  doc.text("VALOR TOTAL:", 118, finalTotalY + 6.2);
-  doc.setFontSize(10.5);
-  doc.setTextColor(...primaryBlue);
-  doc.text(formatCurrency(payload.invoice.total), 192, finalTotalY + 6.2, { align: "right" } as never);
+  doc.text("Total", 124, summaryStartY + 29);
 
-  // -------------------------------------------------------------
-  // 6. PIE DE PAGINA OFICIAL
-  // -------------------------------------------------------------
-  const footerStartY = Math.max(summaryStartY + 52, doc.internal.pageSize.height - 14);
+  doc.setFontSize(12.5);
+  doc.setTextColor(...primaryBlue);
+  doc.text(formatCurrency(payload.invoice.total), 189, summaryStartY + 29, { align: "right" } as never);
+
+  // =============================================================
+  // 7. PIE DE PAGINA OFICIAL
+  // =============================================================
+  const footerStartY = Math.max(summaryStartY + 42, doc.internal.pageSize.height - 12);
   doc.setDrawColor(226, 232, 240);
   doc.line(14, footerStartY - 2, 196, footerStartY - 2);
 
   doc.setTextColor(...softText);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.8);
-  doc.text(
-    "Representacion impresa de comprobante electronico (RIDE) autorizado por el SRI.",
-    14,
-    footerStartY + 2,
+  doc.setFontSize(7);
+  const footerLines = doc.splitTextToSize(
+    payload.invoice.sriAuthorizationNumber || payload.invoice.sriAccessKey
+      ? "Representacion impresa de comprobante electronico (RIDE) autorizado por el SRI."
+      : "Este documento es un comprobante comercial generado en ContaNova.",
+    140,
   );
+  footerLines.forEach((line: string, index: number) => doc.text(line, 14, footerStartY + index * 4));
 
   const pageCount = doc.getNumberOfPages();
   for (let page = 1; page <= pageCount; page += 1) {
     doc.setPage(page);
-    doc.setFontSize(6.8);
+    doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
     doc.text(
-      `Pagina ${page} de ${pageCount} - ContaNova`,
+      `ContaNova - Pagina ${page} de ${pageCount}`,
       196,
       doc.internal.pageSize.height - 8,
       { align: "right" } as never,
