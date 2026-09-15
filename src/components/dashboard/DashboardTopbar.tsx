@@ -1,4 +1,4 @@
-import { AlertTriangle, Bell, Check, Clock, DollarSign, FileText, LogOut } from "lucide-react";
+import { AlertTriangle, Bell, Check, Clock, DollarSign, FileText, LogOut, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ const roleLabels: Record<string, string> = {
   superadmin: "Superadmin",
   admin: "Admin",
   contador: "Contador",
-  empleado: "Empleado",
+  empleado: "Operador",
 };
 
 function timeAgo(date: Date) {
@@ -54,41 +54,64 @@ export function DashboardTopbar() {
   };
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-3 md:h-14 md:px-4">
-      <div className="flex min-w-0 items-center gap-2">
-        <SidebarTrigger className="md:hidden" />
-        <div className="hidden min-w-0 sm:block">
-          <p className="truncate text-sm font-semibold text-foreground">Panel de control</p>
-          <p className="hidden truncate text-xs text-muted-foreground md:block">Gestiona tu plataforma y accesos desde un solo lugar.</p>
-        </div>
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-background/80 backdrop-blur-md px-3 md:px-6 transition-all">
+      <div className="flex min-w-0 items-center gap-3">
+        <SidebarTrigger className="h-8 w-8 text-muted-foreground hover:text-foreground" />
+        
+        {/* Buscador rapido estilo Linear */}
+        <button
+          type="button"
+          onClick={() => navigate("/app/facturacion")}
+          className="hidden sm:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-border/70 bg-muted/40 text-xs text-muted-foreground hover:border-primary/40 hover:bg-muted/70 transition-all cursor-pointer"
+        >
+          <Search size={13} className="text-muted-foreground" />
+          <span className="hidden md:inline">Buscar facturas o clientes...</span>
+          <span className="md:hidden">Buscar...</span>
+          <kbd className="ml-1 hidden rounded border border-border/80 bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground sm:inline-block shadow-2xs">
+            ⌘K
+          </kbd>
+        </button>
       </div>
-      <div className="flex shrink-0 items-center gap-1.5 md:gap-3">
+
+      <div className="flex shrink-0 items-center gap-2 md:gap-3">
+        {/* Badge de estado en vivo de la empresa */}
+        {role !== "superadmin" && company && (
+          <div className="hidden lg:flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="text-xs font-semibold text-foreground truncate max-w-[140px]">{company.name}</span>
+            <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">SRI Activo</span>
+          </div>
+        )}
+
         <ThemeToggle />
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-4 w-4 text-muted-foreground" />
+            <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60">
+              <Bell className="h-4 w-4" />
               {unread > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                <span className="absolute 1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground shadow-sm animate-pulse">
                   {unread > 9 ? "9+" : unread}
                 </span>
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[calc(100vw-2rem)] p-0 sm:w-80" align="end">
-            <div className="flex items-center justify-between p-3 pb-2">
-              <h4 className="text-sm font-semibold">Notificaciones</h4>
+          <PopoverContent className="w-[calc(100vw-2rem)] p-0 sm:w-84 rounded-2xl border-border/70 shadow-xl backdrop-blur-xl" align="end">
+            <div className="flex items-center justify-between p-3.5 pb-2.5">
+              <h4 className="text-sm font-bold">Notificaciones</h4>
               {unread > 0 && (
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={markAllAsRead}>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-primary font-semibold" onClick={markAllAsRead}>
                   <Check className="mr-1 h-3 w-3" />Marcar todas
                 </Button>
               )}
             </div>
-            <Separator />
+            <Separator className="bg-border/60" />
             <ScrollArea className="h-[320px]">
               {notifications.length === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">Sin notificaciones</p>
+                <p className="py-10 text-center text-xs text-muted-foreground">Sin notificaciones pendientes</p>
               ) : (
                 notifications.map((notification) => {
                   const config = typeConfig[notification.type];
@@ -96,21 +119,21 @@ export function DashboardTopbar() {
                   return (
                     <div
                       key={notification.id}
-                      className={`flex cursor-pointer gap-3 p-3 transition-colors hover:bg-muted/50 ${!notification.read ? "bg-primary/5" : ""}`}
+                      className={`flex cursor-pointer gap-3 p-3 transition-colors hover:bg-muted/60 border-b border-border/30 last:border-0 ${!notification.read ? "bg-primary/5" : ""}`}
                       onClick={() => markAsRead(notification.id)}
                     >
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${config.className}`}>
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ring-1 ring-black/5 ${config.className}`}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm leading-tight ${!notification.read ? "font-semibold" : "font-medium"}`}>
+                          <p className={`text-xs leading-tight ${!notification.read ? "font-bold text-foreground" : "font-medium text-foreground/80"}`}>
                             {notification.title}
                           </p>
-                          {!notification.read && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                          {!notification.read && <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
                         </div>
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{notification.message}</p>
-                        <p className="mt-1 text-[10px] text-muted-foreground">{timeAgo(notification.timestamp)}</p>
+                        <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{notification.message}</p>
+                        <p className="mt-1 text-[10px] font-medium text-muted-foreground/70">{timeAgo(notification.timestamp)}</p>
                       </div>
                     </div>
                   );
@@ -120,34 +143,29 @@ export function DashboardTopbar() {
           </PopoverContent>
         </Popover>
 
-        {role !== "superadmin" && (
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-muted/40 px-2.5 py-1.5 md:flex">
-            {company?.logo_url ? (
-              <img src={company.logo_url} alt={company.name} className="h-7 w-7 rounded-full object-cover ring-1 ring-border" />
-            ) : (
-              <BrandMark compact className="h-7 w-7 rounded-full" />
-            )}
-            <div className="max-w-[160px]">
-              <p className="truncate text-xs font-semibold leading-tight">{company?.name || "ContaNova"}</p>
-              <p className="truncate text-[10px] text-muted-foreground">Empresa activa</p>
-            </div>
-          </div>
-        )}
+        {/* Separador vertical sutil */}
+        <div className="h-4 w-px bg-border/60 hidden sm:block" />
 
-        <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+        <div className="flex items-center gap-2.5">
+          <Avatar className="h-8 w-8 ring-2 ring-primary/20 transition-transform hover:scale-105">
+            <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
               {initials}
             </AvatarFallback>
           </Avatar>
-          <div className="hidden md:flex md:flex-col">
-            <span className="text-sm font-medium leading-tight">{displayName}</span>
-            {role && <span className="text-[10px] text-muted-foreground">{roleLabels[role] || role}</span>}
+          <div className="hidden md:flex md:flex-col text-left">
+            <span className="text-xs font-semibold leading-tight text-foreground truncate max-w-[120px]">{displayName}</span>
+            {role && <span className="text-[10px] font-medium text-muted-foreground">{roleLabels[role] || role}</span>}
           </div>
         </div>
 
-        <Button variant="ghost" size="icon" onClick={handleLogout} title="Cerrar sesion">
-          <LogOut className="h-4 w-4 text-muted-foreground" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+          title="Cerrar sesión"
+        >
+          <LogOut className="h-4 w-4" />
         </Button>
       </div>
     </header>

@@ -176,16 +176,22 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Resumen de tu negocio - {currentMonthLabel}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Panel General</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Resumen de operaciones y actividad en tiempo real</p>
+        </div>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-border/80 bg-muted/40 text-xs font-semibold text-muted-foreground self-start sm:self-auto shadow-2xs">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="capitalize">{currentMonthLabel}</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {metrics.map((metric) => (
           <Card
             key={metric.title}
-            className="group cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
+            className="group relative overflow-hidden rounded-2xl border border-border/70 bg-card/80 backdrop-blur-sm p-5 shadow-card hover:border-primary/40 hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 cursor-pointer"
             onClick={metric.action}
             role="button"
             tabIndex={0}
@@ -196,37 +202,35 @@ export default function DashboardHome() {
               }
             }}
           >
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{metric.title}</p>
-                  <p className="mt-1 text-2xl font-bold">{metric.value}</p>
-                  <div className="mt-3 flex max-h-0 items-center gap-1 overflow-hidden text-xs font-medium text-primary opacity-0 transition-all duration-200 group-hover:max-h-10 group-hover:opacity-100">
-                    <span>{metric.helper}</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </div>
-                </div>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${metric.color}`}>
-                  <metric.icon className="h-5 w-5" />
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-muted-foreground truncate">{metric.title}</p>
+                <p className="mt-1.5 text-2xl font-black tracking-tight text-foreground">{metric.value}</p>
+                <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-primary group-hover:translate-x-0.5 transition-transform">
+                  <span>{metric.helper}</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </div>
               </div>
-            </CardContent>
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ${metric.color} group-hover:scale-110 transition-transform duration-200`}>
+                <metric.icon className="h-5 w-5" />
+              </div>
+            </div>
           </Card>
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-lg">Ventas por dia</CardTitle>
+        <Card className="lg:col-span-2 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-sm shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-bold text-foreground">Ventas por día</CardTitle>
           </CardHeader>
           <CardContent>
             {salesData.length > 0 ? (
               <ChartContainer config={chartConfig} className="h-[280px] w-full">
                 <BarChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="day" fontSize={12} />
-                  <YAxis fontSize={12} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.6)" />
+                  <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="ventas" fill="var(--color-ventas)" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -237,16 +241,16 @@ export default function DashboardHome() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Estado de facturas</CardTitle>
+        <Card className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-sm shadow-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-bold text-foreground">Estado de facturas</CardTitle>
           </CardHeader>
           <CardContent>
             {statusDistribution.length > 0 ? (
               <div className="flex h-[280px] flex-col items-center justify-center">
                 <ChartContainer config={chartConfig} className="h-[200px] w-full">
                   <PieChart>
-                    <Pie data={statusDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, value }) => `${name}: ${value}`}>
+                    <Pie data={statusDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} innerRadius={45} label={({ name, value }) => `${name}: ${value}`}>
                       {statusDistribution.map((_, index) => (
                         <Cell key={index} fill={pieColors[index % pieColors.length]} />
                       ))}
@@ -256,39 +260,41 @@ export default function DashboardHome() {
                 </ChartContainer>
               </div>
             ) : (
-              <p className="py-12 text-center text-sm text-muted-foreground">Sin facturas.</p>
+              <p className="py-12 text-center text-sm text-muted-foreground">Sin facturas emitidas este mes.</p>
             )}
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ShoppingBag className="h-5 w-5 text-muted-foreground" />
-              Top clientes por facturacion
+        <Card className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-sm shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+              <ShoppingBag className="h-4 w-4 text-primary" />
+              Top clientes por facturación
             </CardTitle>
           </CardHeader>
           <CardContent>
             {topClients.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">Sin datos.</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">Sin clientes registrados aún.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {topClients.map((item, index) => (
                   <button
                     key={item.name}
                     type="button"
-                    className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-left transition-colors hover:bg-muted/50"
+                    className="flex w-full items-center justify-between rounded-xl p-2.5 text-left transition-all hover:bg-muted/60 border border-transparent hover:border-border/50"
                     onClick={() => item.clientId ? navigate(`/app/clientes/${item.clientId}`) : navigate("/app/clientes")}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="w-5 text-xs font-bold text-muted-foreground">{index + 1}</span>
-                      <span className="text-sm font-medium">{item.name}</span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-foreground">
+                        {index + 1}
+                      </span>
+                      <span className="text-sm font-semibold truncate text-foreground">{item.name}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold">${item.total.toFixed(2)}</span>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-bold text-foreground">${item.total.toFixed(2)}</span>
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                   </button>
                 ))}
@@ -297,9 +303,14 @@ export default function DashboardHome() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Ultimas facturas</CardTitle>
+        <Card className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-sm shadow-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between text-base font-bold text-foreground">
+              <span>Últimas facturas</span>
+              <Button variant="ghost" size="sm" className="h-7 text-xs text-primary font-semibold" onClick={() => navigate("/app/facturacion")}>
+                Ver todas <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -307,39 +318,39 @@ export default function DashboardHome() {
                 <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
               </div>
             ) : billableInvoices.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">No hay facturas registradas.</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">No hay facturas registradas.</p>
             ) : (
-              <Table className="min-w-[560px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Estado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {billableInvoices.slice(0, 5).map((invoice) => {
-                    return (
+              <div className="overflow-x-auto">
+                <Table className="min-w-[500px]">
+                  <TableHeader>
+                    <TableRow className="border-border/60 hover:bg-transparent">
+                      <TableHead className="text-xs">Fecha</TableHead>
+                      <TableHead className="text-xs">Cliente</TableHead>
+                      <TableHead className="text-right text-xs">Total</TableHead>
+                      <TableHead className="text-xs">Estado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {billableInvoices.slice(0, 5).map((invoice) => (
                       <TableRow
                         key={invoice.id}
-                        className="cursor-pointer transition-colors hover:bg-muted/50"
+                        className="cursor-pointer transition-colors hover:bg-muted/60 border-border/40"
                         onClick={() => navigate(`/app/facturacion/${invoice.id}`)}
                       >
-                        <TableCell className="text-sm">{invoice.date}</TableCell>
-                        <TableCell className="max-w-[120px] truncate text-sm font-medium">{invoice.client_name}</TableCell>
-                        <TableCell className="text-right text-sm">${Number(invoice.total).toFixed(2)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground font-medium">{invoice.date}</TableCell>
+                        <TableCell className="max-w-[140px] truncate text-xs font-semibold text-foreground">{invoice.client_name}</TableCell>
+                        <TableCell className="text-right text-xs font-bold text-foreground">${Number(invoice.total).toFixed(2)}</TableCell>
                         <TableCell>
-                          <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center justify-between gap-1.5">
                             <InvoiceStatusBadge status={invoice.status} />
-                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                            <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-50 group-hover:opacity-100" />
                           </div>
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -356,7 +367,7 @@ function ActivityFeed() {
 
   const actionLabels: Partial<Record<ActivityAction, string>> = {
     crear_factura: "Factura",
-    editar_factura: "Edicion",
+    editar_factura: "Edición",
     enviar_factura: "Correo",
     registrar_pago: "Pago",
     crear_cliente: "Cliente",
@@ -364,15 +375,15 @@ function ActivityFeed() {
     eliminar_cliente: "Cliente",
     crear_producto: "Producto",
     editar_producto: "Producto",
-    actualizar_configuracion: "Configuracion",
+    actualizar_configuracion: "Configuración",
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Activity className="h-5 w-5 text-muted-foreground" />
-          Actividad reciente
+    <Card className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-sm shadow-card">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+          <Activity className="h-4 w-4 text-primary" />
+          Actividad reciente del equipo
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -381,22 +392,22 @@ function ActivityFeed() {
             <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
           </div>
         ) : activities.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Sin actividad registrada.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">Sin actividad registrada en este período.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {activities.map((activity: ActivityLog) => (
-              <div key={activity.id} className="flex items-start gap-3 border-b border-border/50 py-2 last:border-0">
-                <div className="mt-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
+              <div key={activity.id} className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-muted/40 border border-transparent hover:border-border/40">
+                <div className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">
                   {actionLabels[activity.action as ActivityAction] || "Evento"}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm">
-                    <span className="font-medium">{activity.user_name}</span>{" "}
+                  <p className="text-xs text-foreground">
+                    <span className="font-semibold">{activity.user_name}</span>{" "}
                     <span className="text-muted-foreground">{activity.description}</span>
                   </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: es })}
-                  </p>
+                </div>
+                <div className="shrink-0 text-[10px] font-medium text-muted-foreground/70">
+                  {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: es })}
                 </div>
               </div>
             ))}

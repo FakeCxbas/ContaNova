@@ -19,11 +19,11 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/app", icon: LayoutDashboard, module: "dashboard" },
-  { title: "Facturacion", url: "/app/facturacion", icon: FileText, module: "facturacion" },
+  { title: "Facturación", url: "/app/facturacion", icon: FileText, module: "facturacion" },
   { title: "Clientes", url: "/app/clientes", icon: Users, module: "clientes" },
   { title: "Productos", url: "/app/productos", icon: Package, module: "productos" },
   { title: "Reportes", url: "/app/reportes", icon: BarChart3, module: "reportes" },
-  { title: "Configuracion", url: "/app/configuracion", icon: Settings, module: "configuracion" },
+  { title: "Configuración", url: "/app/configuracion", icon: Settings, module: "configuracion" },
 ];
 
 export function AppSidebar() {
@@ -37,49 +37,56 @@ export function AppSidebar() {
   const sidebarCaption = role === "superadmin" ? "Panel de plataforma" : "Gestionado con ContaNova";
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-4 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-1">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
+      <SidebarHeader className="border-b border-sidebar-border/60 p-3.5 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-1">
         <button
           type="button"
           className={cn(
-            "flex w-full items-center gap-3 rounded-2xl px-1 py-1 text-left transition-colors hover:bg-sidebar-accent/70",
-            collapsed && "justify-center px-0",
+            "flex w-full items-center gap-3 rounded-2xl p-1.5 text-left transition-colors hover:bg-sidebar-accent/70",
+            collapsed && "justify-center p-1",
           )}
           onClick={toggleSidebar}
         >
           {role !== "superadmin" && company?.logo_url ? (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar-accent/60 p-1">
-              <img src={company.logo_url} alt={company.name} className="h-full w-full rounded-xl object-contain" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-sidebar-border/80 bg-sidebar-accent/60 p-1 shadow-xs">
+              <img src={company.logo_url} alt={company.name} className="h-full w-full rounded-lg object-contain" />
             </div>
           ) : (
-            <BrandMark compact className="shrink-0" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20">
+              <BrandMark compact className="shrink-0" />
+            </div>
           )}
           {!collapsed && (
             <div className="min-w-0">
-              <span className="block truncate text-base font-bold text-sidebar-foreground">{sidebarTitle}</span>
-              <span className="block text-xs text-sidebar-foreground/70">{sidebarCaption}</span>
+              <span className="block truncate text-sm font-bold text-sidebar-foreground">{sidebarTitle}</span>
+              <span className="block text-[11px] text-muted-foreground">{sidebarCaption}</span>
             </div>
           )}
         </button>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-2 py-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Menu principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/70 px-2 mb-1">
+            Menú principal
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild className="h-9 rounded-xl transition-all">
                     <NavLink
                       to={item.url}
                       end={item.url === "/app"}
-                      className={cn("hover:bg-sidebar-accent", collapsed && "justify-center px-0")}
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
+                      className={cn(
+                        "flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-xl transition-all",
+                        collapsed && "justify-center px-0",
+                      )}
+                      activeClassName="bg-primary/10 text-primary font-semibold shadow-xs"
                       onClick={() => {
                         if (isMobile) setOpenMobile(false);
                       }}
                     >
-                      <item.icon className={cn("h-4 w-4", !collapsed && "mr-2")} />
+                      <item.icon className={cn("h-4 w-4 shrink-0 transition-transform group-hover:scale-105")} />
                       {!collapsed && <span>{role === "superadmin" && item.module === "configuracion" ? "Empresas" : item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>

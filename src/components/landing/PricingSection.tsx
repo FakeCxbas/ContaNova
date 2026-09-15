@@ -97,7 +97,7 @@ const PricingSection = () => {
             o bajar el costo por factura con una propuesta anual.
           </p>
 
-          <div className="mx-auto mt-8 inline-flex rounded-full border border-white/10 bg-card/80 p-1 shadow-[0_14px_50px_rgba(15,23,42,0.18)]">
+          <div className="mx-auto mt-8 inline-flex rounded-full border border-border/80 bg-muted/50 p-1.5 shadow-sm">
             {(Object.keys(billingOptions) as BillingMode[]).map((option) => {
               const current = billingOptions[option];
               const active = billingMode === option;
@@ -108,9 +108,9 @@ const PricingSection = () => {
                   type="button"
                   onClick={() => setBillingMode(option)}
                   className={[
-                    "rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200",
+                    "rounded-full px-6 py-2 text-xs sm:text-sm font-semibold transition-all duration-200",
                     active
-                      ? "bg-primary text-primary-foreground shadow-[0_10px_30px_rgba(37,99,235,0.35)]"
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/25"
                       : "text-muted-foreground hover:text-foreground",
                   ].join(" ")}
                 >
@@ -136,24 +136,25 @@ const PricingSection = () => {
               <article
                 key={plan.name}
                 className={[
-                  "group relative overflow-hidden rounded-[28px] border border-white/8 bg-card/90 p-8 shadow-[0_18px_60px_rgba(15,23,42,0.26)] transition-all duration-300",
-                  "hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_24px_80px_rgba(37,99,235,0.16)]",
-                  plan.popular ? "lg:-translate-y-2 lg:border-primary/30" : "",
+                  "group relative overflow-hidden rounded-3xl border bg-card/90 backdrop-blur-md p-8 shadow-card transition-all duration-300",
+                  "hover:-translate-y-1 hover:shadow-card-hover",
+                  plan.popular
+                    ? "border-primary/50 ring-2 ring-primary/20 lg:-translate-y-2 shadow-xl shadow-primary/10"
+                    : "border-border/70 hover:border-primary/30",
                 ].join(" ")}
               >
                 <div
                   className={[
-                    "absolute inset-0 opacity-100",
+                    "absolute inset-0 pointer-events-none opacity-40",
                     plan.popular
-                      ? "bg-[linear-gradient(160deg,rgba(37,99,235,0.26),rgba(79,70,229,0.18),rgba(6,182,212,0.12))]"
-                      : "bg-[linear-gradient(160deg,rgba(15,23,42,0.82),rgba(15,23,42,0.68))]",
+                      ? "bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent"
+                      : "bg-transparent",
                   ].join(" ")}
                 />
-                <div className="absolute inset-x-8 top-0 h-px bg-white/12" />
 
                 <div className="relative">
                   {plan.popular && (
-                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                    <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary shadow-sm shadow-primary/15">
                       <Sparkles className="h-3.5 w-3.5" />
                       Más elegido
                     </div>
