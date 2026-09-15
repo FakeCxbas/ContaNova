@@ -17,6 +17,7 @@ type JsPdfWithAutoTable = {
   save: (filename: string) => void;
   getNumberOfPages: () => number;
   setPage: (pageNumber: number) => void;
+  setProperties?: (properties: { title?: string; subject?: string; author?: string; keywords?: string; creator?: string }) => void;
   internal: {
     pageSize: {
       height: number;
@@ -295,6 +296,14 @@ async function buildInvoicePdfDocument(payload: InvoicePdfPayload) {
     unit: "mm",
     format: "a4",
   }) as JsPdfWithAutoTable;
+
+  const docTitle = `${payload.invoice.type || "Factura"} ${payload.invoice.number || ""}`.trim();
+  doc.setProperties?.({
+    title: docTitle || "Factura",
+    subject: docTitle || "Factura",
+    author: payload.company.name || "ContaNova",
+    creator: "ContaNova",
+  });
 
   if (payload.invoice.number === "__legacy_contanova_layout__") {
     const left = 14;
@@ -991,6 +1000,13 @@ export async function exportToPDF(
     unit: "mm",
     format: "a4",
   }) as JsPdfWithAutoTable;
+
+  doc.setProperties?.({
+    title,
+    subject: title,
+    author: "ContaNova",
+    creator: "ContaNova",
+  });
 
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");

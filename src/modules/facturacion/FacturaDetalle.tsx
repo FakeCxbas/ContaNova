@@ -290,7 +290,8 @@ export default function FacturaDetalle() {
 
   const handleDownloadPdf = async () => {
     try {
-      await downloadInvoicePdf(invoicePdfPayload, `${documentType}_${invoice.number}`);
+      const cleanNumber = (invoice.number || "sin-numero").replace(/[/\\:*?"<>|\s]+/g, "-");
+      await downloadInvoicePdf(invoicePdfPayload, `${documentLabel}_${cleanNumber}`);
     } catch (error) {
       toast({ title: "No se pudo generar el PDF", description: getErrorMessage(error), variant: "destructive" });
     }
@@ -316,7 +317,7 @@ export default function FacturaDetalle() {
         invoiceNumber: invoice.number,
         companyName: company?.name || "ContaNova",
         pdfBase64,
-        filename: `${documentType}_${invoice.number}.pdf`,
+        filename: `${documentLabel}_${(invoice.number || "documento").replace(/[/\\:*?"<>|\s]+/g, "-")}.pdf`,
       });
 
       await updateInvoice.mutateAsync({
@@ -652,12 +653,17 @@ export default function FacturaDetalle() {
       <Card>
         <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <FileText className="h-5 w-5 text-primary" />
-              Vista previa del PDF
-            </CardTitle>
+            <div className="flex items-center gap-2.5">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileText className="h-5 w-5 text-primary" />
+                Vista previa del PDF
+              </CardTitle>
+              <Badge variant="outline" className="text-xs font-semibold px-2 py-0.5 border-primary/30 text-primary bg-primary/5">
+                {documentLabel} {invoice.number}
+              </Badge>
+            </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Revisa la representacion imprimible de {documentLabelLower} sin descargar el archivo.
+              {documentLabel} {invoice.number} · {client?.name || invoice.client_name || "Cliente"}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -670,10 +676,11 @@ export default function FacturaDetalle() {
                 href={pdfPreviewUrl}
                 target="_blank"
                 rel="noreferrer"
+                download={`${documentLabel}_${(invoice.number || "documento").replace(/[/\\:*?"<>|\s]+/g, "-")}.pdf`}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-accent"
               >
                 <ExternalLink className="h-4 w-4" />
-                Abrir
+                Abrir PDF
               </a>
             )}
           </div>
@@ -699,7 +706,7 @@ export default function FacturaDetalle() {
             {!pdfPreviewLoading && !pdfPreviewError && pdfPreviewUrl && (
               <iframe
                 src={`${pdfPreviewUrl}#toolbar=1&navpanes=0&view=FitH`}
-                title={`PDF ${invoice.number}`}
+                title={`${documentLabel} ${invoice.number}`}
                 className="h-[62vh] w-full bg-background sm:h-[78vh]"
               />
             )}

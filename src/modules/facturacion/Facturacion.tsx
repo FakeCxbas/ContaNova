@@ -449,7 +449,7 @@ export default function Facturacion() {
               invoiceNumber: effectiveInvoice.number,
               companyName: company.name || "ContaNova",
               pdfBase64,
-              filename: `factura_${effectiveInvoice.number}.pdf`,
+              filename: `Factura_${(effectiveInvoice.number || "documento").replace(/[/\\:*?"<>|\s]+/g, "-")}.pdf`,
             });
 
             await updateInvoice.mutateAsync({
