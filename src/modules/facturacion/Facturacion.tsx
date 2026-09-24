@@ -30,7 +30,8 @@ import { ExportMenu } from "@/components/ExportMenu";
 import { InvoiceStatusBadge } from "@/components/status/InvoiceStatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { getInvoiceDeliveryStatusMeta, getInvoiceStatusMeta, normalizeInvoiceStatus } from "@/lib/invoice-status";
-import { useClients } from "@/services/clients";
+import { useClients, useCreateClient } from "@/services/clients";
+import type { ClientInput } from "@/services/clientService";
 import { useCompany, useCompanyId } from "@/services/companies";
 import { activityService } from "@/services/activityService";
 import { invoiceEmailService } from "@/services/invoiceEmailService";
@@ -105,6 +106,14 @@ export default function Facturacion() {
   const [createdPrintPayload, setCreatedPrintPayload] = useState<InvoicePdfPayload | null>(null);
   const [createdPrintInvoice, setCreatedPrintInvoice] = useState<Invoice | null>(null);
   const [openingPrintPdf, setOpeningPrintPdf] = useState(false);
+  const [showQuickClientDialog, setShowQuickClientDialog] = useState(false);
+  const [quickClientForm, setQuickClientForm] = useState({
+    name: "",
+    identification: "",
+    email: "",
+    phone: "",
+    address: "",
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -114,6 +123,7 @@ export default function Facturacion() {
   const { data: companyId } = useCompanyId();
   const { data: company } = useCompany();
   const createInvoice = useCreateInvoice();
+  const createClientMutation = useCreateClient();
   const updateInvoice = useUpdateInvoice();
   const updateProduct = useUpdateProduct();
 
@@ -176,34 +186,96 @@ export default function Facturacion() {
   const docTypeConfig = DOCUMENT_TYPES[selectedDocType];
   const needsProducts = selectedDocType !== "retencion" && selectedDocType !== "guia_remision";
   const isSanViernesCompany = company?.name?.trim().toLowerCase() === "san viernes";
-  const finalConsumerClient = clients.find((client) => client.name.trim().toLowerCase() === "consumidor final");
+  const finalConsumerClient = clients.find((client) => client.name?.trim().toLowerCase() === "consumidor final");
 
   useEffect(() => {
-    if (!isSanViernesCompany || !finalConsumerClient?.id) return;
-    setSelectedClientId(finalConsumerClient.id);
-  }, [finalConsumerClient?.id, isSanViernesCompany]);
+    if (selectedClientId) return;
+    if (finalConsumerClient?.id) {
+      setSelectedClientId(finalConsumerClient.id);
+    }
+  }, [finalConsumerClient?.id, selectedClientId]);
+
+  // Defined here before any conditional returns to strictly adhere to React Rules of Hooks
+  const uniqueClients = useMemo(
+    () => [...new Set(invoices.map((invoice) => invoice.client_name))],
+    [invoices],
+  );
+
+  const filteredInvoices = useMemo(
+    () =>
+      invoices.filter((invoice) => {
+        if (searchNumber && !invoice.number.toLowerCase().includes(searchNumber.toLowerCase())) return false;
+        if (filterClient !== "all" && invoice.client_name !== filterClient) return false;
+        if (filterDocType !== "all" && invoice.document_type !== filterDocType) return false;
+        if (filterDateFrom && invoice.date < filterDateFrom) return false;
+        if (filterDateTo && invoice.date > filterDateTo) return false;
+        return true;
+      }),
+    [invoices, searchNumber, filterClient, filterDocType, filterDateFrom, filterDateTo],
+  );
+
+  const exportData = useMemo(
+    () =>
+      filteredInvoices.map((invoice) => ({
+        date: invoice.date,
+        client: invoice.client_name,
+        number: invoice.number,
+        type: DOCUMENT_TYPES[invoice.document_type as DocumentType]?.label || "Factura",
+        subtotal: Number(invoice.subtotal),
+        iva: Number(invoice.iva),
+        total: Number(invoice.total),
+        status: getInvoiceStatusMeta(invoice.status).label,
+        delivery: getInvoiceDeliveryStatusMeta(invoice.delivery_status).label,
+      })),
+    [filteredInvoices],
+  );
+
+  const handleSaveQuickClient = async () => {
+    if (!quickClientForm.name.trim()) {
+      toast({ title: "Nombre requerido", description: "Ingresa el nombre o razón social.", variant: "destructive" });
+      return;
+    }
+    if (!companyId) {
+      toast({ title: "Error", description: "No se identificó la empresa activa.", variant: "destructive" });
+      return;
+    }
+    try {
+      const created = await createClientMutation.mutateAsync({
+        name: quickClientForm.name.trim(),
+        identification: quickClientForm.identification.trim(),
+        email: quickClientForm.email.trim(),
+        phone: quickClientForm.phone.trim(),
+        address: quickClientForm.address.trim(),
+      });
+      setSelectedClientId(created.id);
+      setShowQuickClientDialog(false);
+      setQuickClientForm({ name: "", identification: "", email: "", phone: "", address: "" });
+      toast({ title: "Cliente creado", description: `${created.name} ha sido seleccionado para este comprobante.` });
+    } catch (error) {
+      toast({ title: "Error al crear cliente", description: getErrorMessage(error), variant: "destructive" });
+    }
+  };
 
   const openPrintPdf = async () => {
     if (!createdPrintPayload || !createdPrintInvoice) return;
 
-    const printWindow = window.open("", "_blank");
     setOpeningPrintPdf(true);
     try {
       const pdfBlob = await generateInvoicePdfBlob(createdPrintPayload);
       const cleanNumber = (createdPrintInvoice.number || "sin-numero").replace(/[/\\:*?"<>|\s]+/g, "-");
-      const pdfFile = new File([pdfBlob], `Factura_${cleanNumber}.pdf`, { type: "application/pdf" });
-      const pdfUrl = URL.createObjectURL(pdfFile);
+      const pdfUrl = URL.createObjectURL(pdfBlob);
 
-      if (printWindow) {
-        printWindow.location.href = pdfUrl;
-      } else {
-        window.open(pdfUrl, "_blank");
-      }
+      const link = document.createElement("a");
+      link.href = pdfUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       setTimeout(() => URL.revokeObjectURL(pdfUrl), 60_000);
       setPrintDialogOpen(false);
     } catch (error) {
-      if (printWindow) printWindow.close();
       toast({ title: "No se pudo abrir el PDF", description: getErrorMessage(error), variant: "destructive" });
     } finally {
       setOpeningPrintPdf(false);
@@ -230,12 +302,18 @@ export default function Facturacion() {
       return;
     }
 
-    const client = clients.find((item) => item.id === selectedClientId);
+    let activeClientId = selectedClientId;
+    let client = clients.find((item) => item.id === activeClientId);
+
+    if (!client && finalConsumerClient) {
+      activeClientId = finalConsumerClient.id;
+      client = finalConsumerClient;
+    }
 
     if ((selectedDocType === "factura" || selectedDocType === "proforma") && !client?.name) {
       toast({
         title: "Cliente incompleto",
-        description: `Selecciona o crea un cliente antes de generar la ${docTypeConfig.label.toLowerCase()}.`,
+        description: `Selecciona o crea un cliente antes de generar la ${docTypeConfig.label.toLowerCase()}. Puedes usar el botón "+ Nuevo cliente".`,
         variant: "destructive",
       });
       return;
@@ -262,8 +340,8 @@ export default function Facturacion() {
     try {
       const nextNumber = await invoiceService.getNextNumber(companyId, selectedDocType);
       const createdInvoice = await createInvoice.mutateAsync({
-        client_id: selectedClientId || null,
-        client_name: client?.name || "Cliente general",
+        client_id: activeClientId || null,
+        client_name: client?.name || "Consumidor final",
         number: nextNumber,
         date: selectedDate,
         subtotal,
@@ -597,13 +675,45 @@ export default function Facturacion() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Cliente</Label>
-              <Select value={selectedClientId} onValueChange={setSelectedClientId} disabled={isSanViernesCompany}>
-                <SelectTrigger><SelectValue placeholder={isSanViernesCompany ? "Consumidor final" : "Seleccionar cliente"} /></SelectTrigger>
+              <div className="flex items-center justify-between">
+                <Label>Cliente</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0 text-xs text-primary hover:underline font-medium"
+                  onClick={() => setShowQuickClientDialog(true)}
+                >
+                  + Nuevo cliente
+                </Button>
+              </div>
+              <Select value={selectedClientId || undefined} onValueChange={setSelectedClientId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={finalConsumerClient ? "Consumidor final (por defecto)" : "Seleccionar cliente"} />
+                </SelectTrigger>
                 <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                  ))}
+                  {clients.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-muted-foreground space-y-2">
+                      <p>No hay clientes registrados aún.</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="w-full text-xs"
+                        onClick={() => setShowQuickClientDialog(true)}
+                      >
+                        Crear cliente rápido
+                      </Button>
+                    </div>
+                  ) : (
+                    clients
+                      .filter((client) => Boolean(client.id))
+                      .map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name} {client.identification ? `(${client.identification})` : ""}
+                        </SelectItem>
+                      ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -737,43 +847,88 @@ export default function Facturacion() {
             {createInvoice.isPending || isCreatingInvoice ? "Cargando..." : `Crear ${docTypeConfig.label.toLowerCase()}`}
           </Button>
         </div>
+
+        <Dialog open={showQuickClientDialog} onOpenChange={setShowQuickClientDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Crear nuevo cliente</DialogTitle>
+              <DialogDescription>
+                Registra los datos para asociar este cliente directamente al comprobante.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 py-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Nombre o Razón Social *</Label>
+                <Input
+                  placeholder="Ej. Juan Pérez o Empresa S.A."
+                  value={quickClientForm.name}
+                  onChange={(e) => setQuickClientForm((prev) => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Identificación (Cédula o RUC) *</Label>
+                <Input
+                  placeholder="10 o 13 dígitos"
+                  value={quickClientForm.identification}
+                  onChange={(e) => setQuickClientForm((prev) => ({ ...prev, identification: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Correo electrónico (para envío de PDF)</Label>
+                <Input
+                  type="email"
+                  placeholder="cliente@ejemplo.com"
+                  value={quickClientForm.email}
+                  onChange={(e) => setQuickClientForm((prev) => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Teléfono</Label>
+                <Input
+                  placeholder="0991234567"
+                  value={quickClientForm.phone}
+                  onChange={(e) => setQuickClientForm((prev) => ({ ...prev, phone: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Dirección</Label>
+                <Input
+                  placeholder="Ciudad / Dirección"
+                  value={quickClientForm.address}
+                  onChange={(e) => setQuickClientForm((prev) => ({ ...prev, address: e.target.value }))}
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setQuickClientForm({
+                    name: "CONSUMIDOR FINAL",
+                    identification: "9999999999999",
+                    email: "",
+                    phone: "9999999999",
+                    address: "S/N",
+                  });
+                }}
+              >
+                Cargar Consumidor Final
+              </Button>
+              <Button
+                type="button"
+                disabled={createClientMutation.isPending || !quickClientForm.name.trim() || !quickClientForm.identification.trim()}
+                onClick={handleSaveQuickClient}
+              >
+                {createClientMutation.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+                Crear y seleccionar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
-
-  const uniqueClients = useMemo(
-    () => [...new Set(invoices.map((invoice) => invoice.client_name))],
-    [invoices],
-  );
-
-  const filteredInvoices = useMemo(
-    () =>
-      invoices.filter((invoice) => {
-        if (searchNumber && !invoice.number.toLowerCase().includes(searchNumber.toLowerCase())) return false;
-        if (filterClient !== "all" && invoice.client_name !== filterClient) return false;
-        if (filterDocType !== "all" && invoice.document_type !== filterDocType) return false;
-        if (filterDateFrom && invoice.date < filterDateFrom) return false;
-        if (filterDateTo && invoice.date > filterDateTo) return false;
-        return true;
-      }),
-    [invoices, searchNumber, filterClient, filterDocType, filterDateFrom, filterDateTo],
-  );
-
-  const exportData = useMemo(
-    () =>
-      filteredInvoices.map((invoice) => ({
-        date: invoice.date,
-        client: invoice.client_name,
-        number: invoice.number,
-        type: DOCUMENT_TYPES[invoice.document_type as DocumentType]?.label || "Factura",
-        subtotal: Number(invoice.subtotal),
-        iva: Number(invoice.iva),
-        total: Number(invoice.total),
-        status: getInvoiceStatusMeta(invoice.status).label,
-        delivery: getInvoiceDeliveryStatusMeta(invoice.delivery_status).label,
-      })),
-    [filteredInvoices],
-  );
 
   return (
     <div className="space-y-6">

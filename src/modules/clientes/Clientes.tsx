@@ -52,6 +52,13 @@ export default function Clientes() {
     }
   };
 
+  const filteredClients = useMemo(() => {
+    const q = search.toLowerCase();
+    return clients.filter(
+      (c) => !q || c.name.toLowerCase().includes(q) || c.identification.includes(q),
+    );
+  }, [clients, search]);
+
   if (showForm) {
     return (
       <div className="space-y-6">
@@ -99,13 +106,6 @@ export default function Clientes() {
       </div>
     );
   }
-
-  const filteredClients = useMemo(() => {
-    const q = search.toLowerCase();
-    return clients.filter(
-      (c) => !q || c.name.toLowerCase().includes(q) || c.identification.includes(q),
-    );
-  }, [clients, search]);
 
   return (
     <div className="space-y-6">

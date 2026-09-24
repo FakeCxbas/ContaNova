@@ -18,3 +18,4 @@ tmp/
 public/ads/
 public/brand/
 *.tsbuildinfo
+.env*
